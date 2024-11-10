@@ -4,6 +4,7 @@ import 'package:studieapp/enums/menu_action.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/crud/notes_service.dart';
 import 'package:studieapp/utilities/dialogs/logout_dialog.dart';
+import 'package:studieapp/views/notes/create_update_note_view.dart';
 import 'package:studieapp/views/notes/notes_list_view.dart';
 
 class NotesView extends StatefulWidget {
@@ -37,7 +38,7 @@ class _NotesViewState extends State<NotesView> {
         actions: [
           IconButton(
             onPressed: () {
-              Navigator.of(context).pushNamed(newNoteRoute);
+              Navigator.of(context).pushNamed(createOrUpdateNoteRoute);
             },
             icon: const Icon(Icons.add),
           ),
@@ -83,6 +84,12 @@ class _NotesViewState extends State<NotesView> {
                           notes: allNotes,
                           onDeleteNote: (note) async {
                             await _notesService.deleteNote(id: note.id);
+                          },
+                          onTap: (note) {
+                            Navigator.of(context).pushNamed(
+                              createOrUpdateNoteRoute,
+                              arguments: note,
+                            );
                           },
                         );
                       } else {
