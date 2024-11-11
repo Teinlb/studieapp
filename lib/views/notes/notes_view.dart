@@ -4,7 +4,6 @@ import 'package:studieapp/enums/menu_action.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/crud/notes_service.dart';
 import 'package:studieapp/utilities/dialogs/logout_dialog.dart';
-import 'package:studieapp/views/notes/create_update_note_view.dart';
 import 'package:studieapp/views/notes/notes_list_view.dart';
 
 class NotesView extends StatefulWidget {
