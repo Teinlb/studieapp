@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:studieapp/layouts/main_layout.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/constants/routes.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
-import 'package:studieapp/views/login_view.dart';
+import 'package:studieapp/views/auth/login_view.dart';
+import 'package:studieapp/views/main/learning/learning_view.dart';
 import 'package:studieapp/views/notes/create_update_note_view.dart';
 import 'package:studieapp/views/notes/notes_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:studieapp/views/register_view.dart';
-import 'package:studieapp/views/verify_email_view.dart';
+import 'package:studieapp/views/auth/register_view.dart';
+import 'package:studieapp/views/auth/verify_email_view.dart';
+import 'package:studieapp/views/main/planning/planning_view.dart';
+import 'package:studieapp/views/main/profile/profile_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,11 +22,23 @@ void main() {
       theme: AppTheme.theme,
       home: const HomePage(),
       routes: {
+        // auth
         loginRoute: (context) => const LoginView(),
         registerRoute: (context) => const RegisterView(),
-        notesRoute: (context) => const NotesView(),
         verifyEmailRoute: (context) => const VerifyEmailView(),
+
+        // notes
+        notesRoute: (context) => const NotesView(),
         createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
+
+        // learning
+        learningRoute: (context) => const LearningView(),
+
+        // planning
+        planningRoute: (context) => const PlanningView(),
+
+        // profile
+        profileRoute: (context) => const ProfileView(),
       },
     ),
   );
@@ -41,7 +57,7 @@ class HomePage extends StatelessWidget {
             final user = AuthService.firebase().currentUser;
             if (user != null) {
               if (user.isEmailVerified) {
-                return const NotesView();
+                return const MainLayout();
               } else {
                 return const VerifyEmailView();
               }
