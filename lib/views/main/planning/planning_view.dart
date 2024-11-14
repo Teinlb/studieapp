@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:studieapp/models/planning_models.dart';
 import 'package:studieapp/theme/app_theme.dart';
 
 class PlanningView extends StatefulWidget {
@@ -9,71 +10,85 @@ class PlanningView extends StatefulWidget {
   State<PlanningView> createState() => _PlanningViewState();
 }
 
-class _PlanningViewState extends State<PlanningView> {
+class _PlanningViewState extends State<PlanningView>
+    with SingleTickerProviderStateMixin {
   // Mock data - replace with actual data from your backend
   final List<Task> tasks = [];
   final List<Deadline> deadlines = [];
   final List<Project> projects = [];
 
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 4, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight),
-          child: Container(
-            color: AppTheme.secondaryBlue,
-            child: const TabBar(
-              isScrollable: true,
-              tabs: [
-                Tab(text: 'Taken'),
-                Tab(text: 'Deadlines'),
-                Tab(text: 'Projecten'),
-                Tab(text: 'Rooster'),
-              ],
-              labelStyle: TextStyle(fontFamily: 'Orbitron'),
-              indicatorColor: AppTheme.accentOrange,
-              labelColor: AppTheme.accentOrange,
-              unselectedLabelColor: AppTheme.textSecondary,
-            ),
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          color: AppTheme.secondaryBlue,
+          child: TabBar(
+            controller: _tabController,
+            isScrollable: true,
+            tabs: const [
+              Tab(text: 'Taken'),
+              Tab(text: 'Deadlines'),
+              Tab(text: 'Projecten'),
+              Tab(text: 'Rooster'),
+            ],
+            labelStyle: const TextStyle(fontFamily: 'Orbitron'),
+            indicatorColor: AppTheme.accentOrange,
+            labelColor: AppTheme.accentOrange,
+            unselectedLabelColor: AppTheme.textSecondary,
           ),
         ),
-        body: TabBarView(
-          children: [
-            _buildTasksTab(),
-            _buildDeadlinesTab(),
-            _buildProjectsTab(),
-            _buildScheduleTab(),
-          ],
-        ),
-        floatingActionButton: _buildFloatingActionButton(),
       ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildTasksTab(),
+          _buildDeadlinesTab(),
+          _buildProjectsTab(),
+          _buildScheduleTab(),
+        ],
+      ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      backgroundColor: AppTheme.accentOrange,
-      child: const Icon(Icons.add, color: Colors.black),
-      onPressed: () {
-        final currentIndex = DefaultTabController.of(context).index;
-        switch (currentIndex) {
-          case 0:
-            _showAddTaskDialog();
-            break;
-          case 1:
-            _showAddDeadlineDialog();
-            break;
-          case 2:
-            _showAddProjectDialog();
-            break;
-          case 3:
-            _showAddScheduleItemDialog();
-            break;
-        }
-      },
-    );
+  Widget? _buildFloatingActionButton() {
+    if (_tabController.index != 3) {
+      return FloatingActionButton(
+        backgroundColor: AppTheme.accentOrange,
+        child: const Icon(Icons.add, color: Colors.black),
+        onPressed: () {
+          switch (_tabController.index) {
+            case 0:
+              _showAddTaskDialog();
+              break;
+            case 1:
+              _showAddDeadlineDialog();
+              break;
+            case 2:
+              _showAddProjectDialog();
+              break;
+          }
+        },
+      );
+    } else {
+      return null;
+    }
   }
 
   // Tasks Tab
@@ -210,10 +225,6 @@ class _PlanningViewState extends State<PlanningView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () => _showEditDeadlineDialog(deadline),
-            ),
-            IconButton(
               icon: const Icon(Icons.delete_outline),
               onPressed: () {
                 setState(() {
@@ -253,55 +264,6 @@ class _PlanningViewState extends State<PlanningView> {
           project.title,
           style: AppTheme.getOrbitronStyle(size: 16),
         ),
-        subtitle: Text(
-          '${project.completedTasks}/${project.totalTasks} taken afgerond',
-          style: AppTheme.getOrbitronStyle(
-            size: 12,
-            color: AppTheme.textTertiary,
-          ),
-        ),
-        leading: CircularProgressIndicator(
-          value: project.totalTasks > 0
-              ? project.completedTasks / project.totalTasks
-              : 0,
-          backgroundColor: AppTheme.secondaryBlue,
-          valueColor:
-              const AlwaysStoppedAnimation<Color>(AppTheme.accentOrange),
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  project.description,
-                  style: AppTheme.getOrbitronStyle(size: 14),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Bewerken'),
-                      onPressed: () => _showEditProjectDialog(project),
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.delete),
-                      label: const Text('Verwijderen'),
-                      onPressed: () {
-                        setState(() {
-                          projects.remove(project);
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -365,33 +327,8 @@ class _PlanningViewState extends State<PlanningView> {
   }
 
   Widget _buildScheduleCell(int index) {
-    return Card(
+    return const Card(
       color: AppTheme.secondaryBlue,
-      child: InkWell(
-        onTap: () => _showAddScheduleItemDialog(),
-        child: Container(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              Text(
-                '9:00',
-                style: AppTheme.getOrbitronStyle(
-                  size: 12,
-                  color: AppTheme.textTertiary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Text(
-                  'Wiskunde',
-                  style: AppTheme.getOrbitronStyle(size: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -429,63 +366,484 @@ class _PlanningViewState extends State<PlanningView> {
 
   // Dialog methods
   void _showAddTaskDialog() {
-    // Implement task dialog
+    final formKey = GlobalKey<FormState>();
+    String title = '';
+    DateTime? dueDate;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nieuwe Taak',
+                  style: AppTheme.getOrbitronStyle(
+                    size: 24,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Titel',
+                    prefixIcon: Icon(Icons.task_outlined),
+                  ),
+                  style: AppTheme.getOrbitronStyle(size: 16),
+                  validator: (value) =>
+                      value?.isEmpty ?? true ? 'Vul een titel in' : null,
+                  onChanged: (value) => title = value,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                                  primary: AppTheme.accentOrange,
+                                  onPrimary: Colors.black,
+                                  surface: AppTheme.secondaryBlue,
+                                  onSurface: AppTheme.textPrimary,
+                                ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (date != null) {
+                      setState(() => dueDate = date);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryBlue,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.borderRadius),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            color: AppTheme.accentOrange),
+                        const SizedBox(width: 16),
+                        Text(
+                          dueDate != null
+                              ? DateFormat('dd/MM/yyyy').format(dueDate!)
+                              : 'Kies een deadline (optioneel)',
+                          style: AppTheme.getOrbitronStyle(size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annuleren'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (formKey.currentState?.validate() ?? false) {
+                          setState(() {
+                            tasks.add(Task(
+                              title: title,
+                              dueDate: dueDate,
+                              isCompleted: false,
+                            ));
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Toevoegen'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _showAddDeadlineDialog() {
-    // Implement deadline dialog
-  }
+    final formKey = GlobalKey<FormState>();
+    String title = '';
+    DateTime? date;
 
-  void _showEditDeadlineDialog(Deadline deadline) {
-    // Implement edit deadline dialog
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nieuwe Deadline',
+                  style: AppTheme.getOrbitronStyle(
+                    size: 24,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Titel',
+                    prefixIcon: Icon(Icons.event_outlined),
+                  ),
+                  style: AppTheme.getOrbitronStyle(size: 16),
+                  validator: (value) =>
+                      value?.isEmpty ?? true ? 'Vul een titel in' : null,
+                  onChanged: (value) => title = value,
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final selectedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime.now(),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                                  primary: AppTheme.accentOrange,
+                                  onPrimary: Colors.black,
+                                  surface: AppTheme.secondaryBlue,
+                                  onSurface: AppTheme.textPrimary,
+                                ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (selectedDate != null) {
+                      setState(() => date = selectedDate);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.secondaryBlue,
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.borderRadius),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today,
+                            color: AppTheme.accentOrange),
+                        const SizedBox(width: 16),
+                        Text(
+                          date != null
+                              ? DateFormat('dd/MM/yyyy').format(date!)
+                              : 'Kies een datum',
+                          style: AppTheme.getOrbitronStyle(size: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annuleren'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (date == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Selecteer een datum'),
+                              backgroundColor: AppTheme.errorRed,
+                            ),
+                          );
+                          return;
+                        }
+                        if (formKey.currentState?.validate() ?? false) {
+                          setState(() {
+                            deadlines.add(Deadline(
+                              title: title,
+                              date: date!,
+                            ));
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Toevoegen'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _showAddProjectDialog() {
-    // Implement project dialog
+    final formKey = GlobalKey<FormState>();
+    String title = '';
+    DateTime? startDate;
+    DateTime? endDate;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(24.0),
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Nieuw Project',
+                  style: AppTheme.getOrbitronStyle(
+                    size: 24,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextFormField(
+                  decoration: const InputDecoration(
+                    labelText: 'Projectnaam',
+                    prefixIcon: Icon(Icons.folder_outlined),
+                  ),
+                  style: AppTheme.getOrbitronStyle(size: 16),
+                  validator: (value) =>
+                      value?.isEmpty ?? true ? 'Vul een projectnaam in' : null,
+                  onChanged: (value) => title = value,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate:
+                                DateTime.now().add(const Duration(days: 365)),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme:
+                                      Theme.of(context).colorScheme.copyWith(
+                                            primary: AppTheme.accentOrange,
+                                            onPrimary: Colors.black,
+                                            surface: AppTheme.secondaryBlue,
+                                            onSurface: AppTheme.textPrimary,
+                                          ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) {
+                            setState(() {
+                              startDate = date;
+                              // Reset endDate if it's before the new startDate
+                              if (endDate != null && endDate!.isBefore(date)) {
+                                endDate = null;
+                              }
+                            });
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryBlue,
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.borderRadius),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Start',
+                                style: AppTheme.getOrbitronStyle(
+                                  size: 14,
+                                  color: AppTheme.textTertiary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today,
+                                      color: AppTheme.accentOrange, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    startDate != null
+                                        ? DateFormat('dd/MM/yyyy')
+                                            .format(startDate!)
+                                        : 'Start',
+                                    style: AppTheme.getOrbitronStyle(size: 14),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () async {
+                          if (startDate == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Selecteer eerst een startdatum'),
+                                backgroundColor: AppTheme.errorRed,
+                              ),
+                            );
+                            return;
+                          }
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate:
+                                startDate!.add(const Duration(days: 1)),
+                            firstDate: startDate!.add(const Duration(days: 1)),
+                            lastDate:
+                                DateTime.now().add(const Duration(days: 365)),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme:
+                                      Theme.of(context).colorScheme.copyWith(
+                                            primary: AppTheme.accentOrange,
+                                            onPrimary: Colors.black,
+                                            surface: AppTheme.secondaryBlue,
+                                            onSurface: AppTheme.textPrimary,
+                                          ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) {
+                            setState(() => endDate = date);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.secondaryBlue,
+                            borderRadius:
+                                BorderRadius.circular(AppTheme.borderRadius),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Eind',
+                                style: AppTheme.getOrbitronStyle(
+                                  size: 14,
+                                  color: AppTheme.textTertiary,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today,
+                                      color: AppTheme.accentOrange, size: 20),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    endDate != null
+                                        ? DateFormat('dd/MM/yyyy')
+                                            .format(endDate!)
+                                        : 'Eind',
+                                    style: AppTheme.getOrbitronStyle(size: 14),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Annuleren'),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (startDate == null || endDate == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Selecteer start- en einddatum'),
+                              backgroundColor: AppTheme.errorRed,
+                            ),
+                          );
+                          return;
+                        }
+                        if (formKey.currentState?.validate() ?? false) {
+                          setState(() {
+                            projects.add(Project(
+                              title: title,
+                              startDate: startDate!,
+                              endDate: endDate!,
+                            ));
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                      child: const Text('Toevoegen'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  void _showEditProjectDialog(Project project) {
-    // Implement edit project dialog
-  }
-
-  void _showAddScheduleItemDialog() {
-    // Implement schedule item dialog
-  }
-}
-
-// Models
-class Task {
-  String title;
-  DateTime? dueDate;
-  bool isCompleted;
-
-  Task({
-    required this.title,
-    this.dueDate,
-    this.isCompleted = false,
-  });
-}
-
-class Deadline {
-  String title;
-  DateTime date;
-
-  Deadline({
-    required this.title,
-    required this.date,
-  });
-}
-
-class Project {
-  String title;
-  String description;
-  int completedTasks;
-  int totalTasks;
-
-  Project({
-    required this.title,
-    required this.description,
-    this.completedTasks = 0,
-    this.totalTasks = 0,
-  });
 }
