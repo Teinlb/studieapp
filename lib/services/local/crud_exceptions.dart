@@ -10,10 +10,12 @@ class UserAlreadyExists implements Exception {}
 
 class CouldNotFindUser implements Exception {}
 
-class CouldNotDeleteNote implements Exception {}
+class CouldNotDeleteData implements Exception {}
 
-class CouldNotFindNote implements Exception {}
+class CouldNotFindData implements Exception {}
 
-class CouldNotUpdateNote implements Exception {}
+class CouldNotUpdateData implements Exception {}
 
-class UserShouldBeSetBeforeReadingAllNotes implements Exception {}
+class UserShouldBeSetBeforeReadingData implements Exception {}
+
+class CouldNotUpdateTask implements Exception {}

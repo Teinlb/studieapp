@@ -28,6 +28,7 @@ class _CreateWordListViewState extends State<CreateWordListView> {
   final TextEditingController _translationController = TextEditingController();
 
   String get userId => AuthService.firebase().currentUser!.id;
+  String get userEmail => AuthService.firebase().currentUser!.email;
 
   @override
   void dispose() {
@@ -67,17 +68,18 @@ class _CreateWordListViewState extends State<CreateWordListView> {
           ? _otherSubjectController.text
           : _selectedSubject;
 
-      final wordListData = {
-        'title': _titleController.text,
-        'subject': subject,
-        'description': _descriptionController.text,
-        'content':
-            _words.map((pair) => '${pair.word}|${pair.translation}').join('\n'),
-        'type': 'wordlist',
-        'userId': userId,
-      };
+      final currentUser =
+          await LocalService().getOrCreateUser(email: userEmail);
 
-      await LocalService().insertFile(wordListData);
+      await LocalService().createFile(
+        owner: currentUser,
+        title: _titleController.text,
+        subject: subject!,
+        description: _descriptionController.text,
+        content:
+            _words.map((pair) => '${pair.word}|${pair.translation}').join('\n'),
+        type: 'wordlist',
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -107,193 +109,120 @@ class _CreateWordListViewState extends State<CreateWordListView> {
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              color: AppTheme.secondaryBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Woordenlijst Gegevens',
-                      style: AppTheme.getOrbitronStyle(
-                        size: 18,
-                        weight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _titleController,
-                      style: AppTheme.getOrbitronStyle(),
-                      decoration: InputDecoration(
-                        labelText: 'Titel',
-                        labelStyle: AppTheme.getOrbitronStyle(
-                            color: AppTheme.textSecondary),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: AppTheme.textTertiary.withOpacity(0.5)),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: AppTheme.accentOrange),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Voer een titel in';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedSubject,
-                      items: [
-                        'Wiskunde',
-                        'Natuurkunde',
-                        'Geschiedenis',
-                        'Literatuur',
-                        'Overig'
-                      ]
-                          .map((subject) => DropdownMenuItem(
-                                value: subject,
-                                child: Text(
-                                  subject,
-                                  style: AppTheme.getOrbitronStyle(),
-                                ),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedSubject = value;
-                          _otherSubjectController.clear();
-                        });
-                      },
-                      style: AppTheme.getOrbitronStyle(),
-                      dropdownColor: AppTheme.secondaryBlue,
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: AppTheme.textPrimary),
-                      decoration: InputDecoration(
-                        labelText: 'Vak',
-                        labelStyle: AppTheme.getOrbitronStyle(
-                            color: AppTheme.textSecondary),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: AppTheme.textTertiary.withOpacity(0.5)),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: AppTheme.accentOrange),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                      ),
-                      validator: (value) {
-                        if (value == null &&
-                            _otherSubjectController.text.isEmpty) {
-                          return 'Selecteer een vak of vul er een in';
-                        }
-                        return null;
-                      },
-                    ),
-                    if (_selectedSubject == 'Overig') ...[
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _otherSubjectController,
-                        style: AppTheme.getOrbitronStyle(),
-                        decoration: InputDecoration(
-                          labelText: 'Overig Vak',
-                          labelStyle: AppTheme.getOrbitronStyle(
-                              color: AppTheme.textSecondary),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(
-                                color: AppTheme.textTertiary.withOpacity(0.5)),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.borderRadius),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide:
-                                const BorderSide(color: AppTheme.accentOrange),
-                            borderRadius:
-                                BorderRadius.circular(AppTheme.borderRadius),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (_selectedSubject == 'Overig' && value == null) {
-                            return 'Vul het overige vak in';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _descriptionController,
-                      style: AppTheme.getOrbitronStyle(),
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        labelText: 'Omschrijving (optioneel)',
-                        labelStyle: AppTheme.getOrbitronStyle(
-                            color: AppTheme.textSecondary),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: AppTheme.textTertiary.withOpacity(0.5)),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide:
-                              const BorderSide(color: AppTheme.accentOrange),
-                          borderRadius:
-                              BorderRadius.circular(AppTheme.borderRadius),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              color: AppTheme.secondaryBlue,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Voeg Woorden Toe',
-                      style: AppTheme.getOrbitronStyle(
-                        size: 18,
-                        weight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
+      body: Builder(
+        builder: (BuildContext scaffoldContext) {
+          return Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  color: AppTheme.secondaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _wordController,
+                        Text(
+                          'Woordenlijst Gegevens',
+                          style: AppTheme.getOrbitronStyle(
+                            size: 18,
+                            weight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _titleController,
+                          style: AppTheme.getOrbitronStyle(),
+                          decoration: InputDecoration(
+                            labelText: 'Titel',
+                            labelStyle: AppTheme.getOrbitronStyle(
+                                color: AppTheme.textSecondary),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color:
+                                      AppTheme.textTertiary.withOpacity(0.5)),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: AppTheme.accentOrange),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Voer een titel in';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          value: _selectedSubject,
+                          items: [
+                            'Wiskunde',
+                            'Natuurkunde',
+                            'Geschiedenis',
+                            'Literatuur',
+                            'Overig'
+                          ]
+                              .map((subject) => DropdownMenuItem(
+                                    value: subject,
+                                    child: Text(
+                                      subject,
+                                      style: AppTheme.getOrbitronStyle(),
+                                    ),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedSubject = value;
+                              _otherSubjectController.clear();
+                            });
+                          },
+                          style: AppTheme.getOrbitronStyle(),
+                          dropdownColor: AppTheme.secondaryBlue,
+                          icon: const Icon(Icons.arrow_drop_down,
+                              color: AppTheme.textPrimary),
+                          decoration: InputDecoration(
+                            labelText: 'Vak',
+                            labelStyle: AppTheme.getOrbitronStyle(
+                                color: AppTheme.textSecondary),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color:
+                                      AppTheme.textTertiary.withOpacity(0.5)),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: AppTheme.accentOrange),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null &&
+                                _otherSubjectController.text.isEmpty) {
+                              return 'Selecteer een vak of vul er een in';
+                            }
+                            return null;
+                          },
+                        ),
+                        if (_selectedSubject == 'Overig') ...[
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _otherSubjectController,
                             style: AppTheme.getOrbitronStyle(),
                             decoration: InputDecoration(
-                              labelText: 'Woord',
+                              labelText: 'Overig Vak',
                               labelStyle: AppTheme.getOrbitronStyle(
                                   color: AppTheme.textSecondary),
                               enabledBorder: OutlineInputBorder(
@@ -310,66 +239,148 @@ class _CreateWordListViewState extends State<CreateWordListView> {
                                     AppTheme.borderRadius),
                               ),
                             ),
+                            validator: (value) {
+                              if (_selectedSubject == 'Overig' &&
+                                  value == null) {
+                                return 'Vul het overige vak in';
+                              }
+                              return null;
+                            },
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _translationController,
-                            style: AppTheme.getOrbitronStyle(),
-                            decoration: InputDecoration(
-                              labelText: 'Vertaling',
-                              labelStyle: AppTheme.getOrbitronStyle(
-                                  color: AppTheme.textSecondary),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                    color:
-                                        AppTheme.textTertiary.withOpacity(0.5)),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.borderRadius),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: const BorderSide(
-                                    color: AppTheme.accentOrange),
-                                borderRadius: BorderRadius.circular(
-                                    AppTheme.borderRadius),
-                              ),
+                        ],
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _descriptionController,
+                          style: AppTheme.getOrbitronStyle(),
+                          maxLines: 3,
+                          decoration: InputDecoration(
+                            labelText: 'Omschrijving (optioneel)',
+                            labelStyle: AppTheme.getOrbitronStyle(
+                                color: AppTheme.textSecondary),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color:
+                                      AppTheme.textTertiary.withOpacity(0.5)),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(
+                                  color: AppTheme.accentOrange),
+                              borderRadius:
+                                  BorderRadius.circular(AppTheme.borderRadius),
                             ),
                           ),
-                        ),
-                        IconButton(
-                          onPressed: _addWord,
-                          icon: const Icon(Icons.add_circle_outline,
-                              color: AppTheme.accentOrange),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _words.length,
-                      itemBuilder: (context, index) {
-                        final pair = _words[index];
-                        return ListTile(
-                          title: Text(
-                            '${pair.word} - ${pair.translation}',
-                            style: AppTheme.getOrbitronStyle(),
-                          ),
-                          trailing: IconButton(
-                            onPressed: () => _removeWord(index),
-                            icon: const Icon(Icons.delete_outline,
-                                color: Colors.red),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 24),
+                Card(
+                  color: AppTheme.secondaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Voeg Woorden Toe',
+                          style: AppTheme.getOrbitronStyle(
+                            size: 18,
+                            weight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _wordController,
+                                style: AppTheme.getOrbitronStyle(),
+                                decoration: InputDecoration(
+                                  labelText: 'Woord',
+                                  labelStyle: AppTheme.getOrbitronStyle(
+                                      color: AppTheme.textSecondary),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                        color: AppTheme.textTertiary
+                                            .withOpacity(0.5)),
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.borderRadius),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: const BorderSide(
+                                        color: AppTheme.accentOrange),
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.borderRadius),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _translationController,
+                                style: AppTheme.getOrbitronStyle(),
+                                decoration: InputDecoration(
+                                  labelText: 'Vertaling',
+                                  labelStyle: AppTheme.getOrbitronStyle(
+                                      color: AppTheme.textSecondary),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(
+                                        color: AppTheme.textTertiary
+                                            .withOpacity(0.5)),
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.borderRadius),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: const BorderSide(
+                                        color: AppTheme.accentOrange),
+                                    borderRadius: BorderRadius.circular(
+                                        AppTheme.borderRadius),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: _addWord,
+                              icon: const Icon(Icons.add_circle_outline,
+                                  color: AppTheme.accentOrange),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _words.length,
+                          itemBuilder: (context, index) {
+                            final pair = _words[index];
+                            return ListTile(
+                              title: Text(
+                                '${pair.word} - ${pair.translation}',
+                                style: AppTheme.getOrbitronStyle(),
+                              ),
+                              trailing: IconButton(
+                                onPressed: () => _removeWord(index),
+                                icon: const Icon(Icons.delete_outline,
+                                    color: Colors.red),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -1,34 +1,74 @@
 // Models
+import 'package:studieapp/services/local/crud_constants.dart';
+
 class Task {
-  String title;
-  DateTime? dueDate;
+  final int id;
+  final int userId;
+  final String title;
+  final DateTime? dueDate;
   bool isCompleted;
 
   Task({
+    required this.id,
+    required this.userId,
     required this.title,
     this.dueDate,
     this.isCompleted = false,
   });
+
+  Task.fromRow(Map<String, Object?> map)
+      : id = map[idColumn] as int,
+        userId = map[userIdColumn] as int,
+        title = map[titleColumn] as String,
+        dueDate = map[dueDateColumn] != null
+            ? DateTime.parse(map[dueDateColumn] as String)
+            : null,
+        isCompleted = (map[isCompletedColumn] as int) == 1 ? true : false;
+
+  @override
+  String toString() =>
+      'Task, ID = $id, userId = $userId, title = $title, date = $dueDate';
 }
 
 class Deadline {
-  String title;
-  DateTime date;
+  final int id;
+  final int userId;
+  final String title;
+  final DateTime date;
 
   Deadline({
+    required this.id,
+    required this.userId,
     required this.title,
     required this.date,
   });
+
+  Deadline.fromRow(Map<String, Object?> map)
+      : id = map[idColumn] as int,
+        userId = map[userIdColumn] as int,
+        title = map[titleColumn] as String,
+        date = DateTime.parse(map[dateColumn] as String);
 }
 
 class Project {
+  final int id;
+  final int userId;
   final String title;
   final DateTime startDate;
   final DateTime endDate;
 
   Project({
+    required this.id,
+    required this.userId,
     required this.title,
     required this.startDate,
     required this.endDate,
   });
+
+  Project.fromRow(Map<String, Object?> map)
+      : id = map[idColumn] as int,
+        userId = map[userIdColumn] as int,
+        title = map[titleColumn] as String,
+        startDate = DateTime.parse(map[startDateColumn] as String),
+        endDate = DateTime.parse(map[endDateColumn] as String);
 }

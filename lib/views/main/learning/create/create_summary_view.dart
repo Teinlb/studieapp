@@ -18,6 +18,7 @@ class _CreateSummaryViewState extends State<CreateSummaryView> {
   final TextEditingController _contentController = TextEditingController();
 
   String get userId => AuthService.firebase().currentUser!.id;
+  String get userEmail => AuthService.firebase().currentUser!.email;
 
   @override
   void dispose() {
@@ -36,16 +37,17 @@ class _CreateSummaryViewState extends State<CreateSummaryView> {
           ? _otherSubjectController.text
           : _selectedSubject;
 
-      final summaryData = {
-        'title': _titleController.text,
-        'subject': subject,
-        'description': _descriptionController.text,
-        'content': _contentController.text,
-        'type': 'summary',
-        'userId': userId,
-      };
+      final currentUser =
+          await LocalService().getOrCreateUser(email: userEmail);
 
-      await LocalService().insertFile(summaryData);
+      await LocalService().createFile(
+        owner: currentUser,
+        title: _titleController.text,
+        subject: subject!,
+        description: _descriptionController.text,
+        content: _contentController.text,
+        type: 'summary',
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
