@@ -16,6 +16,7 @@ const subjectColumn = 'subject';
 const descriptionColumn = 'description';
 const contentColumn = 'content';
 const typeColumn = 'type';
+const lastOpenedColumn = 'last_opened';
 
 const dueDateColumn = 'due_date';
 const dateColumn = 'date';
@@ -40,6 +41,7 @@ const createFileTable = '''CREATE TABLE IF NOT EXISTS "$fileTable" (
   "$descriptionColumn" TEXT,
   "$contentColumn" TEXT NOT NULL,
   "$typeColumn" TEXT NOT NULL,
+  "$lastOpenedColumn" TEXT NOT NULL,
   PRIMARY KEY("$idColumn" AUTOINCREMENT),
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
 );''';

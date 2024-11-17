@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:studieapp/models/planning_models.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
-import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/views/main/planning/deadlines/deadlines_list_view.dart';
 import 'package:studieapp/views/main/planning/empty_state.dart';
 

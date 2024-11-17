@@ -71,27 +71,23 @@ class _PlanningViewState extends State<PlanningView>
   }
 
   Widget? _buildFloatingActionButton() {
-    if (_tabController.index != 3) {
-      return FloatingActionButton(
-        backgroundColor: AppTheme.accentOrange,
-        child: const Icon(Icons.add, color: Colors.black),
-        onPressed: () {
-          switch (_tabController.index) {
-            case 0:
-              _showAddTaskDialog();
-              break;
-            case 1:
-              _showAddDeadlineDialog();
-              break;
-            case 2:
-              _showAddProjectDialog();
-              break;
-          }
-        },
-      );
-    } else {
-      return null;
-    }
+    return FloatingActionButton(
+      backgroundColor: AppTheme.accentOrange,
+      child: const Icon(Icons.add, color: Colors.black),
+      onPressed: () {
+        switch (_tabController.index) {
+          case 0:
+            _showAddTaskDialog();
+            break;
+          case 1:
+            _showAddDeadlineDialog();
+            break;
+          case 2:
+            _showAddProjectDialog();
+            break;
+        }
+      },
+    );
   }
 
   // Updated dialog methods

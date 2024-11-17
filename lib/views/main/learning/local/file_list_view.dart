@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
-import 'package:studieapp/views/main/learning/file_item.dart';
+import 'package:studieapp/views/main/learning/local/file_item.dart';
 
 class FileListView extends StatefulWidget {
   const FileListView({super.key});

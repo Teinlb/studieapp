@@ -172,6 +172,8 @@ class LocalService {
   Future<File> getFile({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
+
+    // Haal het bestand op uit de database
     final files = await db.query(
       fileTable,
       limit: 1,
@@ -182,11 +184,30 @@ class LocalService {
     if (files.isEmpty) {
       throw CouldNotFindData();
     } else {
+      // Update de laatst geopende tijd
+      final now = DateTime.now();
+      await db.update(
+        fileTable,
+        {
+          lastOpenedColumn: now.toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      // Maak een bestand van de database-rij
       final file = File.fromRow(files.first);
+
+      // Werk de lastOpened van het lokale bestand bij
+      final updatedFile =
+          file.copyWith(lastOpened: now); // Assuming you have a copyWith method
+
+      // Werk de lokale lijst en stream bij
       _files.removeWhere((file) => file.id == id);
-      _files.add(file);
+      _files.add(updatedFile);
       _filesStreamController.add(_files);
-      return file;
+
+      return updatedFile;
     }
   }
 
@@ -334,7 +355,7 @@ class LocalService {
   Future<int> deleteAllTasks() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(fileTable);
+    final numberOfDeletions = await db.delete(taskTable);
     _tasks = [];
     _tasksStreamController.add(_tasks);
     return numberOfDeletions;
@@ -343,7 +364,7 @@ class LocalService {
   Future<int> deleteAllDeadlines() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(fileTable);
+    final numberOfDeletions = await db.delete(deadlineTable);
     _deadlines = [];
     _deadlinesStreamController.add(_deadlines);
     return numberOfDeletions;
@@ -352,7 +373,7 @@ class LocalService {
   Future<int> deleteAllProjects() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(fileTable);
+    final numberOfDeletions = await db.delete(projectTable);
     _projects = [];
     _projectsStreamController.add(_projects);
     return numberOfDeletions;
@@ -439,6 +460,8 @@ class LocalService {
       throw CouldNotFindUser();
     }
 
+    final lastOpened = DateTime.now();
+
     // create the file
     final fileId = await db.insert(fileTable, {
       userIdColumn: owner.id,
@@ -447,6 +470,7 @@ class LocalService {
       descriptionColumn: description,
       contentColumn: content,
       typeColumn: type,
+      lastOpenedColumn: lastOpened.toIso8601String(),
     });
     final file = File(
       id: fileId,
@@ -456,6 +480,7 @@ class LocalService {
       description: description!,
       content: content,
       type: type,
+      lastOpened: lastOpened,
     );
 
     _files.add(file);
@@ -670,6 +695,7 @@ class LocalService {
       final dbPath = join(docsPath.path, dbName);
       final db = await openDatabase(dbPath);
       _db = db;
+
       // create the tables
       await db.execute(createUserTable);
       await db.execute(createFileTable);
