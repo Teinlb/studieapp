@@ -8,12 +8,13 @@ import 'package:studieapp/views/main/learning/local/summary/create_summary_view.
 import 'package:studieapp/views/main/learning/local/wordlist/create_wordlist_view.dart';
 import 'package:studieapp/views/main/learning/local/file_list_view.dart';
 import 'package:studieapp/views/main/learning/learning_view.dart';
-import 'package:studieapp/views/notes/create_update_note_view.dart';
-import 'package:studieapp/views/notes/notes_view.dart';
 import 'package:studieapp/views/auth/register_view.dart';
 import 'package:studieapp/views/auth/verify_email_view.dart';
 import 'package:studieapp/views/main/planning/planning_view.dart';
 import 'package:studieapp/views/main/profile/profile_view.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,16 +23,13 @@ void main() {
       title: 'Ideale Studie-App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
+      navigatorObservers: [routeObserver],
       home: const HomePage(),
       routes: {
         // auth
         loginRoute: (context) => const LoginView(),
         registerRoute: (context) => const RegisterView(),
         verifyEmailRoute: (context) => const VerifyEmailView(),
-
-        // notes
-        notesRoute: (context) => const NotesView(),
-        createOrUpdateNoteRoute: (context) => const CreateUpdateNoteView(),
 
         // main
         mainLayoutRoute: (context) => const MainLayout(),

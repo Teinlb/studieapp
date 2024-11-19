@@ -4,6 +4,7 @@ class AppTheme {
   // Core colors
   static const Color primaryDark = Color(0xFF0A0F2C);
   static const Color secondaryBlue = Color(0xFF1A1E36);
+  static const Color tertiaryBlue = Color.fromARGB(255, 31, 43, 120);
   static const Color accentOrange =
       Color(0xFFFFA726); //fromARGB(255, 38, 255, 103)
   static const Color errorRed = Color(0xFFEF4444);

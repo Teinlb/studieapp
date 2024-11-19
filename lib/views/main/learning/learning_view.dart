@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:studieapp/constants/routes.dart';
-import 'package:studieapp/theme/app_theme.dart';
+import 'package:studieapp/models/file.dart';
+import 'package:studieapp/services/local/local_service.dart';
+import 'package:studieapp/views/main/learning/local/wordlist/wordlist_view.dart';
+import 'dart:developer' as d show log;
 
 class LearningView extends StatefulWidget {
   const LearningView({super.key});
@@ -11,43 +14,37 @@ class LearningView extends StatefulWidget {
 }
 
 class _LearningViewState extends State<LearningView> {
-  // Mock data - replace with actual data from your backend
-  final List<StudyFile> recentFiles = [
-    StudyFile(
-      title: 'Economie H1',
-      type: FileType.flashcards,
-      lastOpened: DateTime.now().subtract(const Duration(hours: 2)),
-      thumbnailUrl: 'path/to/thumbnail',
-    ),
-    StudyFile(
-      title: 'Nederlands Literatuur',
-      type: FileType.summary,
-      lastOpened: DateTime.now().subtract(const Duration(days: 1)),
-      thumbnailUrl: 'path/to/thumbnail',
-    ),
-  ];
+  late final LocalService _localService;
+  List<File> recentFiles = [];
 
-  // main widget
+  @override
+  void initState() {
+    super.initState();
+    _localService = LocalService();
+    _loadRecentFiles();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildRecentFiles(),
+            _buildRecentFiles(theme),
             const SizedBox(height: 24),
-            _buildCreateSection(),
+            _buildCreateSection(theme),
             const SizedBox(height: 24),
-            _buildOnlineSection(),
+            _buildOnlineSection(theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRecentFiles() {
+  Widget _buildRecentFiles(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -56,10 +53,7 @@ class _LearningViewState extends State<LearningView> {
           children: [
             Text(
               'Recent geopend',
-              style: AppTheme.getOrbitronStyle(
-                size: 24,
-                weight: FontWeight.bold,
-              ),
+              style: theme.textTheme.displayLarge,
             ),
             TextButton.icon(
               icon: const Icon(Icons.folder_outlined),
@@ -77,7 +71,7 @@ class _LearningViewState extends State<LearningView> {
             scrollDirection: Axis.horizontal,
             itemCount: recentFiles.length,
             itemBuilder: (context, index) {
-              return _buildRecentFileCard(recentFiles[index]);
+              return _buildRecentFileCard(recentFiles[index], theme);
             },
           ),
         ),
@@ -85,12 +79,24 @@ class _LearningViewState extends State<LearningView> {
     );
   }
 
-  Widget _buildRecentFileCard(StudyFile file) {
+  Widget _buildRecentFileCard(File file, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return Card(
       margin: const EdgeInsets.only(right: 16),
       child: InkWell(
-        onTap: () {
-          // Open file
+        onTap: () async {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => WordListView(
+                file: file,
+                onFileUpdate: (id, content) async {
+                  await _localService.updateFile(id: id, content: content);
+                },
+              ),
+            ),
+          );
+          await _loadRecentFiles();
         },
         child: Container(
           width: 160,
@@ -99,18 +105,17 @@ class _LearningViewState extends State<LearningView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                file.type == FileType.flashcards
+                file.type == 'wordlist'
                     ? Icons.style_outlined
                     : Icons.description_outlined,
                 size: 32,
-                color: AppTheme.accentOrange,
+                color: colorScheme.secondary,
               ),
               const Spacer(),
               Text(
                 file.title,
-                style: AppTheme.getOrbitronStyle(
-                  size: 16,
-                  weight: FontWeight.bold,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -118,10 +123,7 @@ class _LearningViewState extends State<LearningView> {
               const SizedBox(height: 8),
               Text(
                 'Laatst geopend: ${_formatDate(file.lastOpened)}',
-                style: AppTheme.getOrbitronStyle(
-                  size: 12,
-                  color: AppTheme.textTertiary,
-                ),
+                style: theme.textTheme.labelSmall,
               ),
             ],
           ),
@@ -130,16 +132,13 @@ class _LearningViewState extends State<LearningView> {
     );
   }
 
-  Widget _buildCreateSection() {
+  Widget _buildCreateSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Nieuw bestand maken',
-          style: AppTheme.getOrbitronStyle(
-            size: 24,
-            weight: FontWeight.bold,
-          ),
+          style: theme.textTheme.displayLarge,
         ),
         const SizedBox(height: 16),
         Row(
@@ -151,6 +150,7 @@ class _LearningViewState extends State<LearningView> {
                 onTap: () {
                   Navigator.of(context).pushNamed(createWordlistRoute);
                 },
+                theme: theme,
               ),
             ),
             const SizedBox(width: 16),
@@ -161,6 +161,7 @@ class _LearningViewState extends State<LearningView> {
                 onTap: () {
                   Navigator.of(context).pushNamed(createSummaryRoute);
                 },
+                theme: theme,
               ),
             ),
           ],
@@ -173,7 +174,9 @@ class _LearningViewState extends State<LearningView> {
     required String title,
     required IconData icon,
     required VoidCallback onTap,
+    required ThemeData theme,
   }) {
+    final colorScheme = theme.colorScheme;
     return Card(
       child: InkWell(
         onTap: onTap,
@@ -185,14 +188,13 @@ class _LearningViewState extends State<LearningView> {
               Icon(
                 icon,
                 size: 48,
-                color: AppTheme.accentOrange,
+                color: colorScheme.secondary,
               ),
               const SizedBox(height: 16),
               Text(
                 title,
-                style: AppTheme.getOrbitronStyle(
-                  size: 16,
-                  weight: FontWeight.bold,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -203,16 +205,13 @@ class _LearningViewState extends State<LearningView> {
     );
   }
 
-  Widget _buildOnlineSection() {
+  Widget _buildOnlineSection(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Online Bibliotheek',
-          style: AppTheme.getOrbitronStyle(
-            size: 24,
-            weight: FontWeight.bold,
-          ),
+          style: theme.textTheme.displayLarge,
         ),
         const SizedBox(height: 16),
         Card(
@@ -225,6 +224,7 @@ class _LearningViewState extends State<LearningView> {
                 onTap: () {
                   // Navigate to search page
                 },
+                theme: theme,
               ),
               const Divider(height: 1),
               _buildOnlineOption(
@@ -234,6 +234,7 @@ class _LearningViewState extends State<LearningView> {
                 onTap: () {
                   // Navigate to upload page
                 },
+                theme: theme,
               ),
               const Divider(height: 1),
               _buildOnlineOption(
@@ -243,6 +244,7 @@ class _LearningViewState extends State<LearningView> {
                 onTap: () {
                   // Navigate to shared content page
                 },
+                theme: theme,
               ),
             ],
           ),
@@ -256,33 +258,31 @@ class _LearningViewState extends State<LearningView> {
     required String subtitle,
     required IconData icon,
     required VoidCallback onTap,
+    required ThemeData theme,
   }) {
+    final colorScheme = theme.colorScheme;
     return ListTile(
       contentPadding: const EdgeInsets.all(16),
       leading: CircleAvatar(
-        backgroundColor: AppTheme.accentOrange.withOpacity(0.1),
+        backgroundColor: colorScheme.secondary.withOpacity(0.1),
         child: Icon(
           icon,
-          color: AppTheme.accentOrange,
+          color: colorScheme.secondary,
         ),
       ),
       title: Text(
         title,
-        style: AppTheme.getOrbitronStyle(
-          size: 16,
-          weight: FontWeight.bold,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.bold,
         ),
       ),
       subtitle: Text(
         subtitle,
-        style: AppTheme.getOrbitronStyle(
-          size: 14,
-          color: AppTheme.textTertiary,
-        ),
+        style: theme.textTheme.bodyMedium,
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.chevron_right,
-        color: AppTheme.textSecondary,
+        color: theme.textTheme.bodyMedium?.color,
       ),
       onTap: onTap,
     );
@@ -302,20 +302,16 @@ class _LearningViewState extends State<LearningView> {
     }
     return DateFormat('dd/MM/yyyy').format(date);
   }
-}
 
-enum FileType { flashcards, summary }
+  Future<void> _loadRecentFiles() async {
+    final allFiles = await _localService.getAllFiles();
+    final sortedFiles = allFiles.toList()
+      ..sort((a, b) => b.lastOpened.compareTo(a.lastOpened));
 
-class StudyFile {
-  final String title;
-  final FileType type;
-  final DateTime lastOpened;
-  final String thumbnailUrl;
-
-  StudyFile({
-    required this.title,
-    required this.type,
-    required this.lastOpened,
-    required this.thumbnailUrl,
-  });
+    if (mounted) {
+      setState(() {
+        recentFiles = sortedFiles.take(5).toList();
+      });
+    }
+  }
 }

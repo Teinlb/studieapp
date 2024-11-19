@@ -274,6 +274,37 @@ class LocalService {
     }
   }
 
+  Future<File> updateFile({
+    required int id,
+    required String content,
+  }) async {
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+
+    // make sure note exists
+    await getFile(id: id);
+
+    // update DB
+    final updatesCount = await db.update(
+      fileTable,
+      {
+        contentColumn: content,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (updatesCount == 0) {
+      throw CouldNotUpdateData();
+    } else {
+      final updatedFile = await getFile(id: id);
+      _files.removeWhere((file) => file.id == updatedFile.id);
+      _files.add(updatedFile);
+      _filesStreamController.add(_files);
+      return updatedFile;
+    }
+  }
+
   Future<Task> updateTask({
     required int id,
     required bool isCompleted,
@@ -495,8 +526,6 @@ class LocalService {
     DateTime? dueDate,
     required bool isCompleted,
   }) async {
-    devtools.log('addTask');
-
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
@@ -522,8 +551,6 @@ class LocalService {
       dueDate: dueDate,
       isCompleted: isCompleted,
     );
-
-    devtools.log(task.toString());
 
     _tasks.add(task);
     _tasksStreamController.add(_tasks);

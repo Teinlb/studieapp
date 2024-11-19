@@ -11,6 +11,7 @@ class PlanningDialog extends StatelessWidget {
   final bool isSubmitEnabled;
 
   const PlanningDialog({
+    super.key,
     required this.title,
     required this.children,
     required this.onCancel,
@@ -21,6 +22,8 @@ class PlanningDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
@@ -34,10 +37,7 @@ class PlanningDialog extends StatelessWidget {
           children: [
             Text(
               title,
-              style: AppTheme.getOrbitronStyle(
-                size: 24,
-                weight: FontWeight.bold,
-              ),
+              style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 24),
             ...children,
@@ -49,10 +49,7 @@ class PlanningDialog extends StatelessWidget {
                   onPressed: onCancel,
                   child: Text(
                     'Annuleren',
-                    style: AppTheme.getOrbitronStyle(
-                      size: 16,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -85,6 +82,7 @@ class DatePickerField extends StatelessWidget {
   final String hintText;
 
   const DatePickerField({
+    super.key,
     required this.label,
     required this.selectedDate,
     required this.onDateSelected,

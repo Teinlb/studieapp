@@ -5,14 +5,14 @@ import 'package:studieapp/views/main/learning/local/wordlist/wordlist_view.dart'
 
 class FileItem extends StatelessWidget {
   final File file;
-  final VoidCallback? onDelete;
-  final Function(File)? onFileUpdate;
+  final VoidCallback onDelete;
+  final Function(int id, String content) onFileUpdate;
 
   const FileItem({
     super.key,
     required this.file,
-    this.onDelete,
-    this.onFileUpdate,
+    required this.onDelete,
+    required this.onFileUpdate,
   });
 
   void _handleTap(BuildContext context) {
@@ -21,13 +21,10 @@ class FileItem extends StatelessWidget {
         context,
         MaterialPageRoute(
           builder: (context) => WordListView(
-            file: file,
-            onFileUpdate: onFileUpdate != null
-                ? (updatedFile) {
-                    onFileUpdate!(updatedFile);
-                  }
-                : null,
-          ),
+              file: file,
+              onFileUpdate: (id, content) {
+                onFileUpdate(id, content);
+              }),
         ),
       );
     } else {

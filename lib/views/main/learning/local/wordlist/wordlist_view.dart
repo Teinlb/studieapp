@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/theme/app_theme.dart';
+import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
 
 class WordPair {
   String word;
@@ -26,12 +27,12 @@ class WordPair {
 
 class WordListView extends StatefulWidget {
   final File file;
-  final Function(File updatedFile)? onFileUpdate;
+  final Function(int id, String content) onFileUpdate;
 
   const WordListView({
     super.key,
     required this.file,
-    this.onFileUpdate,
+    required this.onFileUpdate,
   });
 
   @override
@@ -52,16 +53,18 @@ class _WordListViewState extends State<WordListView> {
     super.initState();
     _words = WordPair.fromFileContent(widget.file.content);
     _filteredWords = List.from(_words);
+    final updatedFile = widget.file.copyWith(
+      lastOpened: DateTime.now(),
+    );
+    widget.onFileUpdate(updatedFile.id, updatedFile.content);
   }
 
   void _updateFile() {
-    if (widget.onFileUpdate != null) {
-      final updatedFile = widget.file.copyWith(
-        content: WordPair.toFileContent(_words),
-        lastOpened: DateTime.now(),
-      );
-      widget.onFileUpdate!(updatedFile);
-    }
+    final updatedFile = widget.file.copyWith(
+      content: WordPair.toFileContent(_words),
+      lastOpened: DateTime.now(),
+    );
+    widget.onFileUpdate(updatedFile.id, updatedFile.content);
   }
 
   void _filterWords(String query) {
@@ -75,14 +78,16 @@ class _WordListViewState extends State<WordListView> {
   }
 
   void _startEditing(int index) {
-    final word = index < _filteredWords.length
-        ? _filteredWords[index]
-        : WordPair(word: '', translation: '');
     setState(() {
       _isEditing = true;
       _editingIndex = index;
-      _wordController.text = word.word;
-      _translationController.text = word.translation;
+      if (index < _filteredWords.length) {
+        _wordController.text = _filteredWords[index].word;
+        _translationController.text = _filteredWords[index].translation;
+      } else {
+        _wordController.clear();
+        _translationController.clear();
+      }
     });
   }
 
@@ -91,8 +96,8 @@ class _WordListViewState extends State<WordListView> {
         _translationController.text.isNotEmpty) {
       setState(() {
         final newPair = WordPair(
-          word: _wordController.text,
-          translation: _translationController.text,
+          word: _wordController.text.trim(),
+          translation: _translationController.text.trim(),
         );
 
         if (_editingIndex != null && _editingIndex! < _filteredWords.length) {
@@ -132,31 +137,69 @@ class _WordListViewState extends State<WordListView> {
     });
   }
 
-  Widget _buildGameButton(
-      String title, IconData icon, Color color, VoidCallback onPressed) {
+  Widget _buildGameButton({
+    required String title,
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
     return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 32),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.labelLarge,
-                textAlign: TextAlign.center,
+      child: AspectRatio(
+        aspectRatio: 1, // Make buttons square
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.tertiaryBlue.withAlpha(
+                220), // Gebruik withAlpha in plaats van niet-bestaande methode
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.4),
+                offset: const Offset(0, 8),
+                blurRadius: 0,
+                spreadRadius: 0,
               ),
             ],
+          ),
+          child: ElevatedButton(
+            onPressed: onPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.all(12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 36, color: Colors.white),
+                const SizedBox(height: 8),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Schyler',
+                      color: Colors.white.withOpacity(0.95),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 2.0,
+                          color: Colors.black.withOpacity(0.3),
+                          offset: const Offset(1, 1),
+                        ),
+                      ],
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -170,7 +213,7 @@ class _WordListViewState extends State<WordListView> {
     return Scaffold(
       backgroundColor: AppTheme.primaryDark,
       appBar: AppBar(
-        title: Text(widget.file.title, style: textTheme.displayMedium),
+        title: Text('Woordenlijst', style: textTheme.displayMedium),
         backgroundColor: AppTheme.secondaryBlue,
         elevation: 0,
       ),
@@ -180,23 +223,25 @@ class _WordListViewState extends State<WordListView> {
           // Details Card
           Card(
             color: AppTheme.secondaryBlue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Vak: ${widget.file.subject}',
-                    style: textTheme.displayMedium,
+                    widget.file.title,
+                    style: textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.file.subject,
+                    style: textTheme.bodyLarge,
                   ),
                   if (widget.file.description.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
                       widget.file.description,
-                      style: textTheme.bodyLarge,
+                      style: textTheme.bodyMedium,
                     ),
                   ],
                 ],
@@ -205,67 +250,70 @@ class _WordListViewState extends State<WordListView> {
           ),
           const SizedBox(height: 16),
 
-          // Game Buttons
-          Row(
+          // Game Buttons (Redesigned Grid)
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1, // Make buttons square
             children: [
               _buildGameButton(
-                'Flashcards',
-                Icons.flip,
-                AppTheme.accentOrange,
-                () {/* TODO: Navigate to Flashcards */},
+                title: 'Flashcards',
+                icon: Icons.menu_book_rounded,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => FlashcardsView(file: widget.file),
+                    ),
+                  );
+                },
               ),
               _buildGameButton(
-                'Multiple\nChoice',
-                Icons.quiz,
-                const Color(0xFF4CAF50),
-                () {/* TODO: Navigate to Multiple Choice */},
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              _buildGameButton(
-                'Word\nLink',
-                Icons.link,
-                const Color(0xFF2196F3),
-                () {/* TODO: Navigate to Word Link */},
+                title: 'Multiple Choice',
+                icon: Icons.check_box_outlined,
+                onPressed: () {/* TODO: Navigate to Multiple Choice */},
               ),
               _buildGameButton(
-                'Catch the\nWord',
-                Icons.catching_pokemon,
-                const Color(0xFFE91E63),
-                () {/* TODO: Navigate to Catch the Word */},
+                title: 'Word Link',
+                icon: Icons.link_rounded,
+                onPressed: () {/* TODO: Navigate to Word Link */},
+              ),
+              _buildGameButton(
+                title: 'Catch the Word',
+                icon: Icons.sports_esports_rounded,
+                onPressed: () {/* TODO: Navigate to Catch the Word */},
               ),
             ],
           ),
           const SizedBox(height: 16),
 
           // Search Bar
-          TextField(
-            controller: _searchController,
-            style: textTheme.bodyLarge,
-            onChanged: _filterWords,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: AppTheme.secondaryBlue,
-              hintText: 'Zoek woorden...',
-              hintStyle: textTheme.bodyMedium,
-              prefixIcon:
-                  const Icon(Icons.search, color: AppTheme.accentOrange),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                borderSide: BorderSide.none,
+
+          Padding(
+            padding: const EdgeInsets.all(4),
+            child: TextField(
+              controller: _searchController,
+              onChanged: _filterWords,
+              decoration: InputDecoration(
+                hintText: 'Zoek woorden...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          _filterWords('');
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Words List
+          // Words List with Editing Functionality
           Card(
-            color: AppTheme.secondaryBlue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-            ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -276,83 +324,88 @@ class _WordListViewState extends State<WordListView> {
                     children: [
                       Text('Woorden', style: textTheme.displayMedium),
                       IconButton(
-                        icon: const Icon(Icons.add_circle_outline,
-                            color: AppTheme.accentOrange),
-                        onPressed: () {
-                          _startEditing(_filteredWords.length);
-                        },
+                        icon: const Icon(Icons.add_circle_outline),
+                        onPressed: () => _startEditing(_filteredWords.length),
                       ),
                     ],
                   ),
-                  if (_isEditing) ...[
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _wordController,
-                            style: textTheme.bodyLarge,
-                            decoration: InputDecoration(
-                              labelText: 'Woord',
-                              labelStyle: textTheme.bodyMedium,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _translationController,
-                            style: textTheme.bodyLarge,
-                            decoration: InputDecoration(
-                              labelText: 'Vertaling',
-                              labelStyle: textTheme.bodyMedium,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.check_circle_outline,
-                              color: Colors.green),
-                          onPressed: _saveEdit,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.cancel_outlined,
-                              color: Colors.red),
-                          onPressed: _cancelEdit,
-                        ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _filteredWords.length,
-                    itemBuilder: (context, index) {
-                      final pair = _filteredWords[index];
-                      return ListTile(
-                        title: Text(pair.word, style: textTheme.bodyLarge),
-                        subtitle: Text(
-                          pair.translation,
-                          style: textTheme.bodyMedium,
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
+
+                  // Editing Row
+                  if (_isEditing)
+                    Card(
+                      color: AppTheme.secondaryBlue.withOpacity(0.5),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined,
-                                  color: AppTheme.accentOrange),
-                              onPressed: () => _startEditing(index),
+                            Expanded(
+                              child: TextField(
+                                controller: _wordController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Woord',
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _translationController,
+                                decoration: const InputDecoration(
+                                  hintText: 'Vertaling',
+                                ),
+                              ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline,
-                                  color: Colors.red),
-                              onPressed: () => _deleteWord(index),
+                              icon: const Icon(Icons.save, color: Colors.green),
+                              onPressed: _saveEdit,
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.cancel, color: Colors.red),
+                              onPressed: _cancelEdit,
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 16),
+
+                  // Word List
+                  _filteredWords.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Geen woorden gevonden',
+                            style: textTheme.bodyMedium,
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _filteredWords.length,
+                          separatorBuilder: (context, index) => const Divider(),
+                          itemBuilder: (context, index) {
+                            final pair = _filteredWords[index];
+                            return ListTile(
+                              title: Text(pair.word),
+                              subtitle: Text(pair.translation),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.orange),
+                                    onPressed: () => _startEditing(index),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => _deleteWord(index),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
                 ],
               ),
             ),

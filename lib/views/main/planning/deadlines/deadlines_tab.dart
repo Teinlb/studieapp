@@ -6,7 +6,7 @@ import 'package:studieapp/views/main/planning/deadlines/deadlines_list_view.dart
 import 'package:studieapp/views/main/planning/empty_state.dart';
 
 class DeadlinesTab extends StatefulWidget {
-  const DeadlinesTab({Key? key}) : super(key: key);
+  const DeadlinesTab({super.key});
 
   @override
   _DeadlinesViewState createState() => _DeadlinesViewState();
