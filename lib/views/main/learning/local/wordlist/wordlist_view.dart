@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
+import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
+import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
+import 'package:studieapp/utilities/dialogs/publish_dialog.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
 
 class WordPair {
@@ -27,12 +30,10 @@ class WordPair {
 
 class WordListView extends StatefulWidget {
   final File file;
-  final Function(int id, String content) onFileUpdate;
 
   const WordListView({
     super.key,
     required this.file,
-    required this.onFileUpdate,
   });
 
   @override
@@ -40,6 +41,7 @@ class WordListView extends StatefulWidget {
 }
 
 class _WordListViewState extends State<WordListView> {
+  late final LocalService _localService;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _wordController = TextEditingController();
   final TextEditingController _translationController = TextEditingController();
@@ -56,7 +58,8 @@ class _WordListViewState extends State<WordListView> {
     final updatedFile = widget.file.copyWith(
       lastOpened: DateTime.now(),
     );
-    widget.onFileUpdate(updatedFile.id, updatedFile.content);
+    _localService = LocalService();
+    _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
   }
 
   void _updateFile() {
@@ -64,7 +67,34 @@ class _WordListViewState extends State<WordListView> {
       content: WordPair.toFileContent(_words),
       lastOpened: DateTime.now(),
     );
-    widget.onFileUpdate(updatedFile.id, updatedFile.content);
+    _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
+  }
+
+  void _deleteFile() async {
+    final shouldDelete = await showDeleteDialog(context);
+    if (shouldDelete) {
+      _localService.deleteFile(id: widget.file.id);
+
+      // Navigeer terug naar het vorige scherm
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _publishFile() async {
+    final publishDetails = await showPublishDialog(context);
+    if (publishDetails != null) {
+      // TODO: Implementeer publicatie logica
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Publiceren: ${publishDetails['title']}' +
+                (publishDetails['description']!.isNotEmpty
+                    ? ' - ${publishDetails['description']}'
+                    : ''),
+          ),
+        ),
+      );
+    }
   }
 
   void _filterWords(String query) {
@@ -216,6 +246,38 @@ class _WordListViewState extends State<WordListView> {
         title: Text('Woordenlijst', style: textTheme.displayMedium),
         backgroundColor: AppTheme.secondaryBlue,
         elevation: 0,
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (String choice) {
+              switch (choice) {
+                case 'publish':
+                  _publishFile();
+                  break;
+                case 'delete':
+                  _deleteFile();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'publish',
+                child: ListTile(
+                  leading: Icon(Icons.public),
+                  title: Text('Publiceren'),
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete',
+                child: ListTile(
+                  leading: Icon(Icons.delete, color: Colors.red),
+                  title:
+                      Text('Verwijderen', style: TextStyle(color: Colors.red)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),

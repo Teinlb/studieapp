@@ -90,7 +90,6 @@ class _PlanningViewState extends State<PlanningView>
     );
   }
 
-  // Updated dialog methods
   void _showAddTaskDialog() {
     final formKey = GlobalKey<FormState>();
     String title = '';
@@ -98,43 +97,46 @@ class _PlanningViewState extends State<PlanningView>
 
     showDialog(
       context: context,
-      builder: (context) => Form(
-        key: formKey,
-        child: PlanningDialog(
-          title: 'Nieuwe Taak',
-          onCancel: () => Navigator.pop(context),
-          onSubmit: () async {
-            if (formKey.currentState?.validate() ?? false) {
-              final owner =
-                  await _localService.getOrCreateUser(email: userEmail);
-              _localService.createTask(
-                owner: owner,
-                title: title,
-                dueDate: dueDate,
-                isCompleted: false,
-              );
-              Navigator.pop(context);
-            }
-          },
-          children: [
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Titel',
-                prefixIcon: Icon(Icons.task_outlined),
+      builder: (context) => StatefulBuilder(
+        // Use StatefulBuilder
+        builder: (context, setState) => Form(
+          key: formKey,
+          child: PlanningDialog(
+            title: 'Nieuwe Taak',
+            onCancel: () => Navigator.pop(context),
+            onSubmit: () async {
+              if (formKey.currentState?.validate() ?? false) {
+                final owner =
+                    await _localService.getOrCreateUser(email: userEmail);
+                _localService.createTask(
+                  owner: owner,
+                  title: title,
+                  dueDate: dueDate,
+                  isCompleted: false,
+                );
+                Navigator.pop(context);
+              }
+            },
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Titel',
+                  prefixIcon: Icon(Icons.task_outlined),
+                ),
+                style: AppTheme.getOrbitronStyle(size: 16),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Vul een titel in' : null,
+                onChanged: (value) => title = value,
               ),
-              style: AppTheme.getOrbitronStyle(size: 16),
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Vul een titel in' : null,
-              onChanged: (value) => title = value,
-            ),
-            const SizedBox(height: 16),
-            DatePickerField(
-              label: 'Deadline',
-              selectedDate: dueDate,
-              onDateSelected: (date) => setState(() => dueDate = date),
-              hintText: 'Kies een deadline (optioneel)',
-            ),
-          ],
+              const SizedBox(height: 16),
+              DatePickerField(
+                label: 'Deadline',
+                selectedDate: dueDate,
+                onDateSelected: (date) => setState(() => dueDate = date),
+                hintText: 'Kies een deadline (optioneel)',
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -204,73 +206,74 @@ class _PlanningViewState extends State<PlanningView>
 
     showDialog(
       context: context,
-      builder: (context) => Form(
-        key: formKey,
-        child: PlanningDialog(
-          title: 'Nieuw Project',
-          onCancel: () => Navigator.pop(context),
-          isSubmitEnabled: startDate != null && endDate != null,
-          onSubmit: () async {
-            if (formKey.currentState?.validate() ?? false) {
-              final owner =
-                  await _localService.getOrCreateUser(email: userEmail);
-              _localService.createProject(
-                owner: owner,
-                title: title,
-                startDate: startDate!,
-                endDate: endDate!,
-              );
-              Navigator.pop(context);
-            }
-          },
-          children: [
-            TextFormField(
-              decoration: const InputDecoration(
-                labelText: 'Projectnaam',
-                prefixIcon: Icon(Icons.folder_outlined),
+      builder: (context) => StatefulBuilder(
+        // Use StatefulBuilder
+        builder: (context, setState) => Form(
+          key: formKey,
+          child: PlanningDialog(
+            title: 'Nieuw Project',
+            onCancel: () => Navigator.pop(context),
+            isSubmitEnabled: startDate != null && endDate != null,
+            onSubmit: () async {
+              if (formKey.currentState?.validate() ?? false) {
+                final owner =
+                    await _localService.getOrCreateUser(email: userEmail);
+                _localService.createProject(
+                  owner: owner,
+                  title: title,
+                  startDate: startDate!,
+                  endDate: endDate!,
+                );
+                Navigator.pop(context);
+              }
+            },
+            children: [
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Projectnaam',
+                  prefixIcon: Icon(Icons.folder_outlined),
+                ),
+                style: AppTheme.getOrbitronStyle(size: 16),
+                validator: (value) =>
+                    value?.isEmpty ?? true ? 'Vul een projectnaam in' : null,
+                onChanged: (value) => title = value,
               ),
-              style: AppTheme.getOrbitronStyle(size: 16),
-              validator: (value) =>
-                  value?.isEmpty ?? true ? 'Vul een projectnaam in' : null,
-              onChanged: (value) => title = value,
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16, // Ruimte tussen de widgets
-              runSpacing: 16, // Ruimte tussen de rijen (voor smalle schermen)
-              children: [
-                SizedBox(
-                  width: MediaQuery.of(context).size.width / 2 -
-                      32, // Halve breedte
-                  child: DatePickerField(
-                    label: 'Start',
-                    selectedDate: startDate,
-                    onDateSelected: (date) {
-                      setState(() {
-                        startDate = date;
-                        if (endDate != null && endDate!.isBefore(date)) {
-                          endDate = null;
-                        }
-                      });
-                    },
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 2 - 32,
+                    child: DatePickerField(
+                      label: 'Start',
+                      selectedDate: startDate,
+                      onDateSelected: (date) {
+                        setState(() {
+                          startDate = date;
+                          if (endDate != null && endDate!.isBefore(date)) {
+                            endDate = null;
+                          }
+                        });
+                      },
+                    ),
                   ),
-                ),
-                SizedBox(
-                  width: MediaQuery.of(context).size.width / 2 -
-                      32, // Halve breedte
-                  child: DatePickerField(
-                    label: 'Eind',
-                    selectedDate: endDate,
-                    firstDate: startDate?.add(const Duration(days: 1)),
-                    onDateSelected: (date) => setState(() => endDate = date),
-                    hintText: startDate == null
-                        ? 'Kies eerst startdatum'
-                        : 'Kies einddatum',
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width / 2 - 32,
+                    child: DatePickerField(
+                      label: 'Eind',
+                      selectedDate: endDate,
+                      firstDate: startDate ?? DateTime.now(),
+                      onDateSelected: (date) => setState(() => endDate = date),
+                      hintText: startDate == null
+                          ? 'Kies eerst startdatum'
+                          : 'Kies einddatum',
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

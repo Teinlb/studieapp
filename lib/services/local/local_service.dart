@@ -9,7 +9,6 @@ import 'package:studieapp/models/file.dart';
 import 'package:studieapp/models/planning_models.dart';
 import 'package:studieapp/services/local/crud_constants.dart';
 import 'package:studieapp/services/local/crud_exceptions.dart';
-import 'dart:developer' as devtools show log;
 
 class LocalService {
   Database? _db;

@@ -4,11 +4,11 @@ import 'package:studieapp/utilities/dialogs/generic_dialog.dart';
 Future<bool> showDeleteDialog(BuildContext context) {
   return showGenericDialog(
     context: context,
-    title: 'Delete',
-    content: 'Are you sure you want do delete this item?',
+    title: 'Verwijderen',
+    content: 'Ben je zeker dat je dit item wilt verwijderen?',
     optionsBuilder: () => {
       'Cancel': false,
-      'Yes': true,
+      'OK': true,
     },
   ).then((value) => value ?? false);
 }

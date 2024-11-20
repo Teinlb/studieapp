@@ -1,39 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/theme/app_theme.dart';
+import 'package:studieapp/views/main/learning/local/summary/summary_view.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/wordlist_view.dart';
 
 class FileItem extends StatelessWidget {
   final File file;
-  final VoidCallback onDelete;
-  final Function(int id, String content) onFileUpdate;
 
   const FileItem({
     super.key,
     required this.file,
-    required this.onDelete,
-    required this.onFileUpdate,
   });
 
   void _handleTap(BuildContext context) {
     if (file.type == 'wordlist') {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => WordListView(
-              file: file,
-              onFileUpdate: (id, content) {
-                onFileUpdate(id, content);
-              }),
-        ),
+        MaterialPageRoute(builder: (context) => WordListView(file: file)),
       );
     } else {
-      // Handle summary type files here
-      // TODO: Navigate to summary view when implemented
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Samenvattingen worden nog niet ondersteund'),
-        ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SummaryView(file: file)),
       );
     }
   }
@@ -70,14 +58,6 @@ class FileItem extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onDelete != null)
-                IconButton(
-                  onPressed: onDelete,
-                  icon: const Icon(
-                    Icons.delete,
-                    color: Colors.red,
-                  ),
-                ),
             ],
           ),
         ),

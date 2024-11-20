@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:studieapp/constants/routes.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/services/local/local_service.dart';
+import 'package:studieapp/views/main/learning/local/summary/summary_view.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/wordlist_view.dart';
-import 'dart:developer' as d show log;
 
 class LearningView extends StatefulWidget {
   const LearningView({super.key});
@@ -65,16 +65,52 @@ class _LearningViewState extends State<LearningView> {
           ],
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 200,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: recentFiles.length,
-            itemBuilder: (context, index) {
-              return _buildRecentFileCard(recentFiles[index], theme);
-            },
-          ),
-        ),
+        recentFiles.isEmpty
+            ? Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.folder_off_outlined,
+                      size: 64,
+                      color:
+                          theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Geen recente bestanden',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color:
+                            theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Bestanden die je opent, verschijnen hier',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color:
+                            theme.colorScheme.onSurfaceVariant.withOpacity(0.5),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recentFiles.length,
+                  itemBuilder: (context, index) {
+                    return _buildRecentFileCard(recentFiles[index], theme);
+                  },
+                ),
+              ),
       ],
     );
   }
@@ -85,17 +121,17 @@ class _LearningViewState extends State<LearningView> {
       margin: const EdgeInsets.only(right: 16),
       child: InkWell(
         onTap: () async {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => WordListView(
-                file: file,
-                onFileUpdate: (id, content) async {
-                  await _localService.updateFile(id: id, content: content);
-                },
-              ),
-            ),
-          );
+          if (file.type == 'wordlist') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => WordListView(file: file)),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SummaryView(file: file)),
+            );
+          }
           await _loadRecentFiles();
         },
         child: Container(
@@ -232,7 +268,7 @@ class _LearningViewState extends State<LearningView> {
                 subtitle: 'Help anderen door je materiaal te delen',
                 icon: Icons.upload_file,
                 onTap: () {
-                  // Navigate to upload page
+                  Navigator.of(context).pushNamed(publishFileListRoute);
                 },
                 theme: theme,
               ),
