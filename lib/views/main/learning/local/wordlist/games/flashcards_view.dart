@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/theme/app_theme.dart';
+import 'dart:math' as math;
 
 class FlashcardsView extends StatefulWidget {
   final File file;
 
-  const FlashcardsView({Key? key, required this.file}) : super(key: key);
+  const FlashcardsView({super.key, required this.file});
 
   @override
   State<FlashcardsView> createState() => _FlashcardsViewState();
 }
 
-class _FlashcardsViewState extends State<FlashcardsView> {
+class _FlashcardsViewState extends State<FlashcardsView>
+    with SingleTickerProviderStateMixin {
   late List<Map<String, dynamic>> _words;
   late List<bool> _knewWord;
+  late AnimationController _controller;
+  late Animation<double> _animation;
   int _currentIndex = 0;
   bool _showTranslation = false;
 
@@ -25,6 +29,21 @@ class _FlashcardsViewState extends State<FlashcardsView> {
       return {'word': parts[0], 'translation': parts[1]};
     }).toList();
     _knewWord = List<bool>.filled(_words.length, false);
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   void _nextWord(bool knew) {
@@ -37,6 +56,17 @@ class _FlashcardsViewState extends State<FlashcardsView> {
         _showResultsDialog();
       }
     });
+  }
+
+  void _flipCard() {
+    if (_animation.status == AnimationStatus.dismissed) {
+      _controller.forward().then((_) {
+        setState(() {
+          _showTranslation = !_showTranslation;
+        });
+        _controller.reset();
+      });
+    }
   }
 
   void _restartLearning({bool onlyUnknown = false}) {
@@ -75,11 +105,11 @@ class _FlashcardsViewState extends State<FlashcardsView> {
         actions: [
           TextButton(
             onPressed: () => _restartLearning(),
-            child: Text("Alles opnieuw leren"),
+            child: const Text("Alles opnieuw leren"),
           ),
           TextButton(
             onPressed: () => _restartLearning(onlyUnknown: true),
-            child: Text("Alleen onbekende woorden leren"),
+            child: const Text("Alleen onbekende woorden leren"),
           ),
         ],
       ),
@@ -101,39 +131,82 @@ class _FlashcardsViewState extends State<FlashcardsView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showTranslation = !_showTranslation;
-                  });
-                },
-                child: Card(
-                  elevation: 10,
-                  child: Container(
-                    width: double.infinity,
-                    height: 200,
-                    alignment: Alignment.center,
-                    child: Text(
-                      _showTranslation ? word['translation'] : word['word'],
-                      style: AppTheme.getOrbitronStyle(size: 24),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+                onTap: _flipCard,
+                child: AnimatedBuilder(
+                  animation: _animation,
+                  builder: (context, child) {
+                    return Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(_animation.value * math.pi),
+                      alignment: Alignment.center,
+                      child: Card(
+                        elevation: 10,
+                        child: Container(
+                          width: double.infinity,
+                          height: 200,
+                          alignment: Alignment.center,
+                          child: Text(
+                            _showTranslation
+                                ? word['translation']
+                                : word['word'],
+                            style: AppTheme.getOrbitronStyle(size: 24),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 32),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  ElevatedButton(
-                    onPressed: () => _nextWord(false),
-                    child: const Text("Niet gekend"),
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                      decoration: BoxDecoration(
+                        color: AppTheme.tertiaryBlue.withAlpha(220),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color.fromARGB(255, 255, 123, 0),
+                            offset: Offset(0, 4),
+                            blurRadius: 0,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () => _nextWord(false),
+                        child: const Text("Ken ik nog niet"),
+                      ),
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: () => _nextWord(true),
-                    child: const Text("Gekend"),
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                      decoration: BoxDecoration(
+                        color: AppTheme.tertiaryBlue.withAlpha(220),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color.fromARGB(255, 255, 123, 0),
+                            offset: Offset(0, 4),
+                            blurRadius: 0,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () => _nextWord(true),
+                        child: const Text("Ken ik al"),
+                      ),
+                    ),
                   ),
                 ],
-              ),
+              )
             ],
           ),
         ),

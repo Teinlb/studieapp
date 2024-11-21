@@ -181,10 +181,10 @@ class _WordListViewState extends State<WordListView> {
             color: AppTheme.tertiaryBlue.withAlpha(
                 220), // Gebruik withAlpha in plaats van niet-bestaande methode
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
+            boxShadow: const [
               BoxShadow(
-                color: Colors.black.withOpacity(0.4),
-                offset: const Offset(0, 8),
+                color: Color.fromARGB(255, 0, 0, 0),
+                offset: Offset(0, 8),
                 blurRadius: 0,
                 spreadRadius: 0,
               ),
