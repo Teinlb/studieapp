@@ -4,21 +4,22 @@ const registerRoute = '/register/';
 const verifyEmailRoute = '/verify-email/';
 
 // notes
-const notesRoute = '/notes/notes/';
-const createOrUpdateNoteRoute = '/notes/new-note/';
+const notesRoute = '/notes/';
+const createOrUpdateNoteRoute = '/new-note/';
 
 // main
 const mainLayoutRoute = '/main/';
 
 // learning
-const learningRoute = '/learning/learning/';
-const fileListRoute = '/learning/filelist/';
-const createWordlistRoute = '/learning/createwordlist';
-const createSummaryRoute = '/learning/createsummary';
-const publishFileListRoute = '/learning/publish-filelist/';
+const learningRoute = '/learning/';
+const fileListRoute = '/filelist/';
+const createWordlistRoute = '/createwordlist';
+const createSummaryRoute = '/createsummary';
+const publishFileListRoute = '/publish-filelist/';
 
 // planning
-const planningRoute = '/planning/planning/';
+const planningRoute = '/planning/';
 
 // profile
-const profileRoute = '/profile/profile/';
+const profileRoute = '/profile/';
+const pomodoroRoute = '/pomodoro/';

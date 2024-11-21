@@ -30,6 +30,26 @@ class Task {
       'Task, ID = $id, userId = $userId, title = $title, date = $dueDate';
 }
 
+class Tag {
+  final int id;
+  final int userId;
+  final String title;
+
+  Tag({
+    required this.id,
+    required this.userId,
+    required this.title,
+  });
+
+  Tag.fromRow(Map<String, Object?> map)
+      : id = map[idColumn] as int,
+        userId = map[userIdColumn] as int,
+        title = map[titleColumn] as String;
+
+  @override
+  String toString() => 'Tag, ID = $id, userId = $userId, title = $title';
+}
+
 class Deadline {
   final int id;
   final int userId;

@@ -4,9 +4,8 @@ class AppTheme {
   // Core colors
   static const Color primaryDark = Color(0xFF0A0F2C);
   static const Color secondaryBlue = Color(0xFF1A1E36);
-  static const Color tertiaryBlue = Color.fromARGB(255, 31, 43, 120);
-  static const Color accentOrange =
-      Color(0xFFFFA726); //fromARGB(255, 38, 255, 103)
+  static const Color tertiaryBlue = Color(0xFF1F2B78);
+  static const Color accentOrange = Color(0xFFFFA726);
   static const Color errorRed = Color(0xFFEF4444);
 
   // Text colors
@@ -14,11 +13,12 @@ class AppTheme {
   static const Color textSecondary = Colors.white70;
   static const Color textTertiary = Color(0xFFB0B0B0);
 
-  static const double borderRadius = 12.0;
-  static const double largeBorderRadius = 16.0;
+  static const double borderRadius = 16.0;
+  static const double largeBorderRadius = 20.0;
 
   static final ThemeData theme = ThemeData(
     brightness: Brightness.dark,
+    fontFamily: 'Orbitron',
     colorScheme: const ColorScheme.dark(
       primary: primaryDark,
       secondary: accentOrange,
@@ -31,14 +31,14 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: primaryDark,
     textTheme: TextTheme(
-      displayLarge: getOrbitronStyle(size: 28, weight: FontWeight.bold),
-      displayMedium: getOrbitronStyle(size: 24, weight: FontWeight.bold),
-      titleLarge: getOrbitronStyle(size: 36, weight: FontWeight.bold),
+      displayLarge: getOrbitronStyle(size: 32, weight: FontWeight.bold),
+      displayMedium: getOrbitronStyle(size: 28, weight: FontWeight.bold),
+      titleLarge: getOrbitronStyle(size: 40, weight: FontWeight.bold),
       bodyLarge: getOrbitronStyle(size: 16, color: textSecondary),
       bodyMedium: getOrbitronStyle(size: 14, color: textTertiary),
       labelLarge: getOrbitronStyle(
-          size: 18, weight: FontWeight.bold, color: Colors.black),
-      labelMedium: getOrbitronStyle(size: 16, color: accentOrange),
+          size: 20, weight: FontWeight.bold, color: primaryDark),
+      labelMedium: getOrbitronStyle(size: 18, color: accentOrange),
       labelSmall: getOrbitronStyle(size: 12, color: textTertiary),
     ),
     appBarTheme: AppBarTheme(
@@ -51,15 +51,15 @@ class AppTheme {
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: accentOrange,
-        foregroundColor: Colors.black,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        foregroundColor: primaryDark,
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(borderRadius),
         ),
-        elevation: 10,
-        shadowColor: accentOrange.withOpacity(0.4),
+        elevation: 6,
+        shadowColor: accentOrange.withOpacity(0.5),
         textStyle: getOrbitronStyle(
-            size: 18, weight: FontWeight.bold, color: Colors.black),
+            size: 18, weight: FontWeight.bold, color: primaryDark),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
@@ -83,11 +83,11 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: accentOrange, width: 2),
+        borderSide: BorderSide(color: accentOrange, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: const BorderSide(color: errorRed, width: 2),
+        borderSide: BorderSide(color: errorRed, width: 2),
       ),
       prefixIconColor: accentOrange,
     ),
@@ -100,7 +100,6 @@ class AppTheme {
     ),
   );
 
-  // Helper method for consistent Orbitron text styles
   static TextStyle getOrbitronStyle({
     double size = 14,
     FontWeight weight = FontWeight.normal,
@@ -113,6 +112,7 @@ class AppTheme {
       fontWeight: weight,
       color: color,
       decoration: decoration,
+      letterSpacing: 0.5,
     );
   }
 }

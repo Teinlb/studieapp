@@ -16,6 +16,7 @@ class LocalService {
 
   List<File> _files = [];
   List<Task> _tasks = [];
+  List<Tag> _tags = [];
   List<Deadline> _deadlines = [];
   List<Project> _projects = [];
 
@@ -124,6 +125,11 @@ class LocalService {
     _tasksStreamController.add(_tasks);
   }
 
+  Future<void> _cacheTags() async {
+    final allTags = await getAllTags();
+    _tags = allTags.toList();
+  }
+
   Future<void> _cacheDeadlines() async {
     final allDeadlines = await getAllDeadlines();
     _deadlines = allDeadlines.toList();
@@ -150,6 +156,14 @@ class LocalService {
     final tasks = await db.query(taskTable);
 
     return tasks.map((taskRow) => Task.fromRow(taskRow));
+  }
+
+  Future<Iterable<Tag>> getAllTags() async {
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+    final tags = await db.query(tagsTable);
+
+    return tags.map((tagRow) => Tag.fromRow(tagRow));
   }
 
   Future<Iterable<Deadline>> getAllDeadlines() async {
@@ -726,11 +740,13 @@ class LocalService {
       await db.execute(createUserTable);
       await db.execute(createFileTable);
       await db.execute(createTaskTable);
+      await db.execute(createTagsTable);
       await db.execute(createDeadlineTable);
       await db.execute(createProjectTable);
 
       await _cacheFiles();
       await _cacheTasks();
+      await _cacheTags();
       await _cacheDeadlines();
       await _cacheProjects();
     } on MissingPlatformDirectoryException {

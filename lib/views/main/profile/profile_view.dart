@@ -27,6 +27,8 @@ class _ProfileViewState extends State<ProfileView> {
         children: [
           _buildProfileCard(),
           const SizedBox(height: 24),
+          _buildPomodoroSection(),
+          const SizedBox(height: 24),
           _buildSettingsSection(),
           const SizedBox(height: 24),
           _buildLogoutButton(),
@@ -128,6 +130,105 @@ class _ProfileViewState extends State<ProfileView> {
         ),
         Text(
           'Ranglijst',
+          style: AppTheme.getOrbitronStyle(
+            size: 14,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPomodoroSection() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Pomodoro Timer',
+                  style: AppTheme.getOrbitronStyle(
+                    size: 22,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.accentOrange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(
+                        16), // Optioneel: meer ruimte rondom het icoon
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(pomodoroRoute);
+                  },
+                  child: const Icon(Icons.timer, color: Colors.white),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Stats Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildPomodoroStatColumn(
+                  icon: Icons.check_circle_outline,
+                  value: '0',
+                  label: 'Sessies',
+                ),
+                _buildPomodoroStatColumn(
+                  icon: Icons.schedule,
+                  value: '25 min',
+                  label: 'Tijd gewerkt',
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPomodoroStatColumn({
+    required IconData icon,
+    required String value,
+    required String label,
+  }) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.accentOrange.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: AppTheme.accentOrange,
+            size: 28,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: AppTheme.getOrbitronStyle(
+            size: 18,
+            weight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
           style: AppTheme.getOrbitronStyle(
             size: 14,
             color: AppTheme.textSecondary,

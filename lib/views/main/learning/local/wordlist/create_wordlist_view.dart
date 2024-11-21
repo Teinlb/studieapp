@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
+import 'package:csv/csv.dart';
 
 class WordPair {
   String word;
@@ -58,6 +61,63 @@ class _CreateWordListViewState extends State<CreateWordListView> {
     setState(() {
       _words.removeAt(index);
     });
+  }
+
+  Future<void> _importWordList() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['csv', 'json'],
+      );
+
+      if (result != null) {
+        final fileBytes = result.files.single.bytes;
+        final fileName = result.files.single.name;
+
+        if (fileBytes == null) return;
+
+        if (fileName.endsWith('.csv')) {
+          final csvString = utf8.decode(fileBytes);
+          final rows = const CsvToListConverter().convert(csvString);
+
+          for (var row in rows) {
+            if (row.length >= 2) {
+              _words.add(WordPair(
+                  word: row[0].toString(), translation: row[1].toString()));
+            }
+          }
+        } else if (fileName.endsWith('.json')) {
+          final jsonString = utf8.decode(fileBytes);
+          final jsonData = jsonDecode(jsonString) as List<dynamic>;
+
+          for (var item in jsonData) {
+            if (item['word'] != null && item['translation'] != null) {
+              _words.add(WordPair(
+                word: item['word'],
+                translation: item['translation'],
+              ));
+            }
+          }
+        }
+
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Woordenlijst geïmporteerd!'),
+            backgroundColor: AppTheme.accentOrange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fout bij het importeren van bestand'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _saveWordList() async {
@@ -372,6 +432,38 @@ class _CreateWordListViewState extends State<CreateWordListView> {
                               ),
                             );
                           },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _importWordList,
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Importeer woordenlijst'),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  color: AppTheme.secondaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.info, color: Colors.grey.shade500),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Je kunt een CSV-bestand met de kolommen "Woord" en "Vertaling", of een JSON-bestand importeren.',
+                            style: AppTheme.getOrbitronStyle(
+                              size: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
                         ),
                       ],
                     ),

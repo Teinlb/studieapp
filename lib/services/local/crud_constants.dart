@@ -2,6 +2,7 @@
 const dbName = 'notes.db';
 const fileTable = 'files';
 const taskTable = 'tasks';
+const tagsTable = 'tags';
 const deadlineTable = 'deadlines';
 const projectTable = 'projects';
 
@@ -25,14 +26,13 @@ const endDateColumn = 'end_date';
 
 const isCompletedColumn = 'completed';
 
-// Create User Table
+// Create Tables
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "$userTable" (
   "$idColumn" INTEGER NOT NULL,
   "$emailColumn" TEXT NOT NULL UNIQUE,
   PRIMARY KEY("$idColumn" AUTOINCREMENT)
 );''';
 
-// Create File Table
 const createFileTable = '''CREATE TABLE IF NOT EXISTS "$fileTable" (
   "$idColumn" INTEGER NOT NULL,
   "$userIdColumn" INTEGER NOT NULL,
@@ -46,7 +46,6 @@ const createFileTable = '''CREATE TABLE IF NOT EXISTS "$fileTable" (
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
 );''';
 
-// Create Task Table
 const createTaskTable = '''CREATE TABLE IF NOT EXISTS "$taskTable" (
   "$idColumn" INTEGER NOT NULL,
   "$userIdColumn" INTEGER NOT NULL,
@@ -57,7 +56,14 @@ const createTaskTable = '''CREATE TABLE IF NOT EXISTS "$taskTable" (
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
 );''';
 
-// Create Deadline Table
+const createTagsTable = '''CREATE TABLE IF NOT EXISTS "$tagsTable" (
+  "$idColumn" INTEGER NOT NULL,
+  "$userIdColumn" INTEGER NOT NULL,
+  "$titleColumn" TEXT NOT NULL,
+  PRIMARY KEY("$idColumn" AUTOINCREMENT),
+  FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
+);''';
+
 const createDeadlineTable = '''CREATE TABLE IF NOT EXISTS "$deadlineTable" (
   "$idColumn" INTEGER NOT NULL,
   "$userIdColumn" INTEGER NOT NULL,
@@ -67,7 +73,6 @@ const createDeadlineTable = '''CREATE TABLE IF NOT EXISTS "$deadlineTable" (
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
 );''';
 
-// Create Project Table
 const createProjectTable = '''CREATE TABLE IF NOT EXISTS "$projectTable" (
   "$idColumn" INTEGER NOT NULL,
   "$userIdColumn" INTEGER NOT NULL,

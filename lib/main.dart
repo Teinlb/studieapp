@@ -12,6 +12,7 @@ import 'package:studieapp/views/main/learning/learning_view.dart';
 import 'package:studieapp/views/auth/register_view.dart';
 import 'package:studieapp/views/auth/verify_email_view.dart';
 import 'package:studieapp/views/main/planning/planning_view.dart';
+import 'package:studieapp/views/main/profile/pomodoro_timer_view.dart';
 import 'package:studieapp/views/main/profile/profile_view.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver =
@@ -47,6 +48,7 @@ void main() {
 
         // profile
         profileRoute: (context) => const ProfileView(),
+        pomodoroRoute: (context) => const PomodoroTimerView(),
       },
     ),
   );
