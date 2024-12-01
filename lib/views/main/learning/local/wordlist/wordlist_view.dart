@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
+import 'package:studieapp/services/cloud/firebase_cloud_storage.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
 import 'package:studieapp/utilities/dialogs/publish_dialog.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
+import 'dart:developer' as devtools show log;
 
 class WordPair {
   String word;
@@ -42,6 +44,7 @@ class WordListView extends StatefulWidget {
 
 class _WordListViewState extends State<WordListView> {
   late final LocalService _localService;
+  late final FirebaseCloudStorage _cloudService;
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _wordController = TextEditingController();
   final TextEditingController _translationController = TextEditingController();
@@ -52,7 +55,6 @@ class _WordListViewState extends State<WordListView> {
 
   @override
   void initState() {
-    super.initState();
     _words = WordPair.fromFileContent(widget.file.content);
     _filteredWords = List.from(_words);
     final updatedFile = widget.file.copyWith(
@@ -60,12 +62,13 @@ class _WordListViewState extends State<WordListView> {
     );
     _localService = LocalService();
     _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
+    _cloudService = FirebaseCloudStorage();
+    super.initState();
   }
 
   void _updateFile() {
     final updatedFile = widget.file.copyWith(
       content: WordPair.toFileContent(_words),
-      lastOpened: DateTime.now(),
     );
     _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
   }
@@ -81,17 +84,12 @@ class _WordListViewState extends State<WordListView> {
   }
 
   void _publishFile() async {
-    final publishDetails = await showPublishDialog(context);
-    if (publishDetails != null) {
-      // TODO: Implementeer publicatie logica
+    final shouldPublish = await showPublishDialog(context);
+    if (shouldPublish) {
+      _cloudService.uploadOrUpdateFile(file: widget.file);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Publiceren: ${publishDetails['title']}' +
-                (publishDetails['description']!.isNotEmpty
-                    ? ' - ${publishDetails['description']}'
-                    : ''),
-          ),
+        const SnackBar(
+          content: Text('Woordenlijst gepubliceerd'),
         ),
       );
     }

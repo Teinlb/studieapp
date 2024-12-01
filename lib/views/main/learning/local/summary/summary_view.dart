@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
+import 'package:studieapp/services/cloud/firebase_cloud_storage.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
@@ -19,15 +20,17 @@ class SummaryView extends StatefulWidget {
 
 class _SummaryViewState extends State<SummaryView> {
   late final LocalService _localService;
+  late final FirebaseCloudStorage _cloudService;
 
   @override
   void initState() {
-    super.initState();
     final updatedFile = widget.file.copyWith(
       lastOpened: DateTime.now(),
     );
     _localService = LocalService();
     _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
+    _cloudService = FirebaseCloudStorage();
+    super.initState();
   }
 
   // void _updateFile() {
@@ -50,17 +53,12 @@ class _SummaryViewState extends State<SummaryView> {
   }
 
   void _publishFile() async {
-    final publishDetails = await showPublishDialog(context);
-    if (publishDetails != null) {
-      // TODO: Implementeer publicatie logica
+    final shouldPublish = await showPublishDialog(context);
+    if (shouldPublish) {
+      _cloudService.uploadOrUpdateFile(file: widget.file);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Publiceren: ${publishDetails['title']}' +
-                (publishDetails['description']!.isNotEmpty
-                    ? ' - ${publishDetails['description']}'
-                    : ''),
-          ),
+        const SnackBar(
+          content: Text('Woordenlijst gepubliceerd'),
         ),
       );
     }

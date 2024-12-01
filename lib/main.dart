@@ -15,9 +15,6 @@ import 'package:studieapp/views/main/planning/planning_view.dart';
 import 'package:studieapp/views/main/profile/pomodoro_timer_view.dart';
 import 'package:studieapp/views/main/profile/profile_view.dart';
 
-final RouteObserver<ModalRoute<void>> routeObserver =
-    RouteObserver<ModalRoute<void>>();
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
@@ -25,7 +22,6 @@ void main() {
       title: 'Ideale Studie-App',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      navigatorObservers: [routeObserver],
       home: const HomePage(),
       routes: {
         // auth

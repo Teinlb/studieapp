@@ -1,60 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:studieapp/utilities/dialogs/generic_dialog.dart';
 
-Future<Map<String, String>?> showPublishDialog(BuildContext context) {
-  return showDialog<Map<String, String>>(
+Future<bool> showPublishDialog(BuildContext context) {
+  return showGenericDialog<bool>(
     context: context,
-    builder: (context) {
-      final titleController = TextEditingController();
-      final descriptionController = TextEditingController();
-
-      return AlertDialog(
-        title: const Text('Publiceren'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: InputDecoration(
-                labelText: 'Titel voor gepubliceerde woordenlijst',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: descriptionController,
-              decoration: InputDecoration(
-                labelText: 'Beschrijving (optioneel)',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuleren'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final title = titleController.text.trim();
-              final description = descriptionController.text.trim();
-
-              if (title.isNotEmpty) {
-                Navigator.of(context).pop({
-                  'title': title,
-                  'description': description,
-                });
-              }
-            },
-            child: const Text('Publiceren'),
-          ),
-        ],
-      );
+    title: 'Publiceren',
+    content:
+        'Weet u zeker dat u de nieuwste versie van deze woordenlijst wilt publiceren?',
+    optionsBuilder: () => {
+      'Cancel': false,
+      'OK': true,
     },
+  ).then(
+    (value) => value ?? false,
   );
 }

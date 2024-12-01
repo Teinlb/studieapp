@@ -18,6 +18,7 @@ const descriptionColumn = 'description';
 const contentColumn = 'content';
 const typeColumn = 'type';
 const lastOpenedColumn = 'last_opened';
+const cloudIdColumn = 'cloud_id';
 
 const dueDateColumn = 'due_date';
 const dateColumn = 'date';
@@ -28,27 +29,28 @@ const isCompletedColumn = 'completed';
 
 // Create Tables
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "$userTable" (
-  "$idColumn" INTEGER NOT NULL,
+  "$idColumn" TEXT NOT NULL UNIQUE,
   "$emailColumn" TEXT NOT NULL UNIQUE,
-  PRIMARY KEY("$idColumn" AUTOINCREMENT)
+  PRIMARY KEY("$idColumn")
 );''';
 
 const createFileTable = '''CREATE TABLE IF NOT EXISTS "$fileTable" (
   "$idColumn" INTEGER NOT NULL,
-  "$userIdColumn" INTEGER NOT NULL,
+  "$userIdColumn" TEXT NOT NULL,
   "$titleColumn" TEXT NOT NULL,
-  "$subjectColumn" TEXT,
+  "$subjectColumn" TEXT NOT NULL,
   "$descriptionColumn" TEXT,
   "$contentColumn" TEXT NOT NULL,
   "$typeColumn" TEXT NOT NULL,
   "$lastOpenedColumn" TEXT NOT NULL,
+  "$cloudIdColumn" TEXT,
   PRIMARY KEY("$idColumn" AUTOINCREMENT),
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
 );''';
 
 const createTaskTable = '''CREATE TABLE IF NOT EXISTS "$taskTable" (
   "$idColumn" INTEGER NOT NULL,
-  "$userIdColumn" INTEGER NOT NULL,
+  "$userIdColumn" TEXT NOT NULL,
   "$titleColumn" TEXT NOT NULL,
   "$dueDateColumn" TEXT,
   "$isCompletedColumn" INTEGER NOT NULL DEFAULT 0,
@@ -58,7 +60,7 @@ const createTaskTable = '''CREATE TABLE IF NOT EXISTS "$taskTable" (
 
 const createTagsTable = '''CREATE TABLE IF NOT EXISTS "$tagsTable" (
   "$idColumn" INTEGER NOT NULL,
-  "$userIdColumn" INTEGER NOT NULL,
+  "$userIdColumn" TEXT NOT NULL,
   "$titleColumn" TEXT NOT NULL,
   PRIMARY KEY("$idColumn" AUTOINCREMENT),
   FOREIGN KEY("$userIdColumn") REFERENCES "$userTable"("$idColumn") ON DELETE CASCADE
@@ -66,7 +68,7 @@ const createTagsTable = '''CREATE TABLE IF NOT EXISTS "$tagsTable" (
 
 const createDeadlineTable = '''CREATE TABLE IF NOT EXISTS "$deadlineTable" (
   "$idColumn" INTEGER NOT NULL,
-  "$userIdColumn" INTEGER NOT NULL,
+  "$userIdColumn" TEXT NOT NULL,
   "$titleColumn" TEXT NOT NULL,
   "$dateColumn" TEXT NOT NULL,
   PRIMARY KEY("$idColumn" AUTOINCREMENT),
@@ -75,7 +77,7 @@ const createDeadlineTable = '''CREATE TABLE IF NOT EXISTS "$deadlineTable" (
 
 const createProjectTable = '''CREATE TABLE IF NOT EXISTS "$projectTable" (
   "$idColumn" INTEGER NOT NULL,
-  "$userIdColumn" INTEGER NOT NULL,
+  "$userIdColumn" TEXT NOT NULL,
   "$titleColumn" TEXT NOT NULL,
   "$startDateColumn" TEXT NOT NULL,
   "$endDateColumn" TEXT NOT NULL,

@@ -7,8 +7,10 @@ import 'package:sqflite/sqflite.dart';
 import 'package:studieapp/extensions/list/filter.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/models/planning_models.dart';
+import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/crud_constants.dart';
 import 'package:studieapp/services/local/crud_exceptions.dart';
+import 'dart:developer' as devtools show log;
 
 class LocalService {
   Database? _db;
@@ -318,6 +320,40 @@ class LocalService {
     }
   }
 
+  Future<File> updateCloudIdFile({
+    required int id,
+    required String cloudId,
+  }) async {
+    devtools.log("TESTETET");
+
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+
+    // make sure note exists
+    await getFile(id: id);
+
+    // update DB
+    final updatesCount = await db.update(
+      fileTable,
+      {
+        cloudIdColumn: cloudId,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    devtools.log(updatesCount.toString());
+
+    if (updatesCount == 0) {
+      throw CouldNotUpdateData();
+    } else {
+      final updatedFile = await getFile(id: id);
+      _files.removeWhere((file) => file.id == updatedFile.id);
+      _files.add(updatedFile);
+      _filesStreamController.add(_files);
+      return updatedFile;
+    }
+  }
+
   Future<Task> updateTask({
     required int id,
     required bool isCompleted,
@@ -555,7 +591,7 @@ class LocalService {
       userIdColumn: owner.id,
       titleColumn: title,
       dueDateColumn: dueDateString,
-      isCompletedColumn: isCompleted,
+      isCompletedColumn: isCompleted ? 1 : 0,
     });
     final task = Task(
       id: taskId,
@@ -666,22 +702,35 @@ class LocalService {
   Future<DatabaseUser> createUser({required String email}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
+
+    // Haal de huidige gebruiker op vanuit Firebase Auth
+    final firebaseUser = AuthService.firebase().currentUser;
+    if (firebaseUser == null) {
+      throw UserNotLoggedIn(); // Definieer deze fout indien nodig
+    }
+
+    final firebaseUserId = firebaseUser.id;
+
+    // Controleer of de gebruiker al in de SQLite-tabel bestaat
     final results = await db.query(
       userTable,
       limit: 1,
-      where: 'email = ?',
-      whereArgs: [email.toLowerCase()],
+      where: '$idColumn = ?',
+      whereArgs: [firebaseUserId],
     );
+
     if (results.isNotEmpty) {
-      throw UserAlreadyExists();
+      throw UserAlreadyExists(); // Definieer deze fout indien nodig
     }
 
-    final userId = await db.insert(userTable, {
+    // Voeg de gebruiker toe aan de SQLite-tabel
+    await db.insert(userTable, {
+      idColumn: firebaseUserId,
       emailColumn: email.toLowerCase(),
     });
 
     return DatabaseUser(
-      id: userId,
+      id: firebaseUserId,
       email: email,
     );
   }
@@ -757,7 +806,7 @@ class LocalService {
 
 @immutable
 class DatabaseUser {
-  final int id;
+  final String id;
   final String email;
   const DatabaseUser({
     required this.id,
@@ -765,7 +814,7 @@ class DatabaseUser {
   });
 
   DatabaseUser.fromRow(Map<String, Object?> map)
-      : id = map[idColumn] as int,
+      : id = map[idColumn] as String,
         email = map[emailColumn] as String;
 
   @override

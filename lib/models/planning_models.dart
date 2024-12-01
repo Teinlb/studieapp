@@ -3,7 +3,7 @@ import 'package:studieapp/services/local/crud_constants.dart';
 
 class Task {
   final int id;
-  final int userId;
+  final String userId;
   final String title;
   final DateTime? dueDate;
   bool isCompleted;
@@ -18,7 +18,7 @@ class Task {
 
   Task.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[userIdColumn] as int,
+        userId = map[userIdColumn] as String,
         title = map[titleColumn] as String,
         dueDate = map[dueDateColumn] != null
             ? DateTime.parse(map[dueDateColumn] as String)
@@ -32,7 +32,7 @@ class Task {
 
 class Tag {
   final int id;
-  final int userId;
+  final String userId;
   final String title;
 
   Tag({
@@ -43,7 +43,7 @@ class Tag {
 
   Tag.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[userIdColumn] as int,
+        userId = map[userIdColumn] as String,
         title = map[titleColumn] as String;
 
   @override
@@ -52,7 +52,7 @@ class Tag {
 
 class Deadline {
   final int id;
-  final int userId;
+  final String userId;
   final String title;
   final DateTime date;
 
@@ -65,14 +65,14 @@ class Deadline {
 
   Deadline.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[userIdColumn] as int,
+        userId = map[userIdColumn] as String,
         title = map[titleColumn] as String,
         date = DateTime.parse(map[dateColumn] as String);
 }
 
 class Project {
   final int id;
-  final int userId;
+  final String userId;
   final String title;
   final DateTime startDate;
   final DateTime endDate;
@@ -87,7 +87,7 @@ class Project {
 
   Project.fromRow(Map<String, Object?> map)
       : id = map[idColumn] as int,
-        userId = map[userIdColumn] as int,
+        userId = map[userIdColumn] as String,
         title = map[titleColumn] as String,
         startDate = DateTime.parse(map[startDateColumn] as String),
         endDate = DateTime.parse(map[endDateColumn] as String);

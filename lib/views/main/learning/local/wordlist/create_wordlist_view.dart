@@ -1,10 +1,13 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:csv/csv.dart';
+import 'package:excel/excel.dart';
 
 class WordPair {
   String word;
@@ -67,49 +70,52 @@ class _CreateWordListViewState extends State<CreateWordListView> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['csv', 'json'],
+        allowedExtensions: ['csv', 'xls', 'xlsx'], // Ondersteun CSV en Excel
       );
 
-      if (result != null) {
-        final fileBytes = result.files.single.bytes;
-        final fileName = result.files.single.name;
+      if (result == null) {
+        debugPrint("Geen bestand geselecteerd");
+        return;
+      }
 
-        if (fileBytes == null) return;
+      final fileBytes = result.files.single.bytes;
+      final filePath = result.files.single.path;
+      final fileName = result.files.single.name;
 
-        if (fileName.endsWith('.csv')) {
-          final csvString = utf8.decode(fileBytes);
-          final rows = const CsvToListConverter().convert(csvString);
+      if (fileBytes == null && filePath == null) {
+        debugPrint("Kan bestand niet lezen, bytes en pad zijn null");
+        return;
+      }
 
-          for (var row in rows) {
-            if (row.length >= 2) {
-              _words.add(WordPair(
-                  word: row[0].toString(), translation: row[1].toString()));
-            }
-          }
-        } else if (fileName.endsWith('.json')) {
-          final jsonString = utf8.decode(fileBytes);
-          final jsonData = jsonDecode(jsonString) as List<dynamic>;
-
-          for (var item in jsonData) {
-            if (item['word'] != null && item['translation'] != null) {
-              _words.add(WordPair(
-                word: item['word'],
-                translation: item['translation'],
-              ));
-            }
-          }
-        }
-
-        setState(() {});
+      // Controleer op bestandstype
+      if (fileName.endsWith('.csv')) {
+        await _processCsv(fileBytes, filePath);
+      } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+        await _processExcel(fileBytes, filePath);
+      } else {
+        debugPrint("Onbekend bestandstype: $fileName");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Woordenlijst geïmporteerd!'),
-            backgroundColor: AppTheme.accentOrange,
+            content: Text('Ongeldig bestandstype'),
+            backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
+        return;
       }
-    } catch (e) {
+
+      // UI bijwerken
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Woordenlijst geïmporteerd!'),
+          backgroundColor: AppTheme.accentOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e, stackTrace) {
+      debugPrint("Fout tijdens importeren: $e");
+      debugPrintStack(stackTrace: stackTrace);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fout bij het importeren van bestand'),
@@ -118,6 +124,66 @@ class _CreateWordListViewState extends State<CreateWordListView> {
         ),
       );
     }
+  }
+
+  Future<void> _processCsv(Uint8List? fileBytes, String? filePath) async {
+    String csvString;
+
+    if (fileBytes != null) {
+      csvString = utf8.decode(fileBytes);
+    } else if (filePath != null) {
+      final file = File(filePath);
+      csvString = await file.readAsString();
+    } else {
+      debugPrint("Geen bruikbare bron voor CSV-bestand.");
+      return;
+    }
+
+    final rows = const CsvToListConverter().convert(csvString, eol: "\n");
+    debugPrint("CSV Rijen: $rows");
+
+    for (var row in rows) {
+      if (row.length >= 2) {
+        _words.add(WordPair(
+          word: row[0].toString(),
+          translation: row[1].toString(),
+        ));
+      } else {
+        debugPrint("Rij overgeslagen: $row");
+      }
+    }
+  }
+
+  Future<void> _processExcel(Uint8List? fileBytes, String? filePath) async {
+    Excel excel;
+
+    if (fileBytes != null) {
+      excel = Excel.decodeBytes(fileBytes);
+    } else if (filePath != null) {
+      final file = File(filePath);
+      excel = Excel.decodeBytes(await file.readAsBytes());
+    } else {
+      debugPrint("Geen bruikbare bron voor Excel-bestand.");
+      return;
+    }
+
+    for (var table in excel.tables.keys) {
+      final sheet = excel.tables[table];
+      if (sheet == null) continue;
+
+      for (var row in sheet.rows) {
+        if (row.length >= 2 && row[0] != null && row[1] != null) {
+          _words.add(WordPair(
+            word: row[0]?.value.toString() ?? '',
+            translation: row[1]?.value.toString() ?? '',
+          ));
+        } else {
+          debugPrint("Rij overgeslagen: $row");
+        }
+      }
+    }
+
+    debugPrint("Excel verwerking compleet. Woordenlijst: $_words");
   }
 
   Future<void> _saveWordList() async {
@@ -164,8 +230,8 @@ class _CreateWordListViewState extends State<CreateWordListView> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveWordList,
+            icon: const Icon(Icons.upload_file),
+            onPressed: _importWordList,
           ),
         ],
       ),
@@ -439,9 +505,9 @@ class _CreateWordListViewState extends State<CreateWordListView> {
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
-                  onPressed: _importWordList,
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Importeer woordenlijst'),
+                  onPressed: _saveWordList,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Woordenlijst opslaan'),
                 ),
                 const SizedBox(height: 16),
                 Card(
@@ -458,7 +524,7 @@ class _CreateWordListViewState extends State<CreateWordListView> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'Je kunt een CSV-bestand met de kolommen "Woord" en "Vertaling", of een JSON-bestand importeren.',
+                            'Gebruik de knop rechtsboven om een Excel- of CSV-bestand te importeren.',
                             style: AppTheme.getOrbitronStyle(
                               size: 14,
                               color: Colors.grey.shade600,
