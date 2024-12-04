@@ -18,7 +18,7 @@ class LocalService {
 
   List<File> _files = [];
   List<Task> _tasks = [];
-  List<Tag> _tags = [];
+  // List<Tag> _tags = [];
   List<Deadline> _deadlines = [];
   List<Project> _projects = [];
 
@@ -127,10 +127,10 @@ class LocalService {
     _tasksStreamController.add(_tasks);
   }
 
-  Future<void> _cacheTags() async {
-    final allTags = await getAllTags();
-    _tags = allTags.toList();
-  }
+  // Future<void> _cacheTags() async {
+  //   final allTags = await getAllTags();
+  //   _tags = allTags.toList();
+  // }
 
   Future<void> _cacheDeadlines() async {
     final allDeadlines = await getAllDeadlines();
@@ -299,6 +299,8 @@ class LocalService {
     // make sure note exists
     await getFile(id: id);
 
+    devtools.log(content);
+
     // update DB
     final updatesCount = await db.update(
       fileTable,
@@ -324,8 +326,6 @@ class LocalService {
     required int id,
     required String cloudId,
   }) async {
-    devtools.log("TESTETET");
-
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
@@ -795,7 +795,7 @@ class LocalService {
 
       await _cacheFiles();
       await _cacheTasks();
-      await _cacheTags();
+      // await _cacheTags();
       await _cacheDeadlines();
       await _cacheProjects();
     } on MissingPlatformDirectoryException {

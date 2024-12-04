@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Core colors
   static const Color primaryDark = Color(0xFF0A0F2C);
   static const Color secondaryBlue = Color(0xFF1A1E36);
-  static const Color tertiaryBlue = Color(0xFF1F2B78);
+  static const Color tertiaryBlue = Color.fromARGB(255, 11, 20, 83);
   static const Color accentOrange = Color(0xFFFFA726);
   static const Color errorRed = Color(0xFFEF4444);
 
@@ -18,7 +19,7 @@ class AppTheme {
 
   static final ThemeData theme = ThemeData(
     brightness: Brightness.dark,
-    fontFamily: 'Orbitron',
+    fontFamily: GoogleFonts.roboto().fontFamily, // Roboto als standaard font
     colorScheme: const ColorScheme.dark(
       primary: primaryDark,
       secondary: accentOrange,
@@ -31,22 +32,22 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: primaryDark,
     textTheme: TextTheme(
-      displayLarge: getOrbitronStyle(size: 32, weight: FontWeight.bold),
-      displayMedium: getOrbitronStyle(size: 28, weight: FontWeight.bold),
-      titleLarge: getOrbitronStyle(size: 40, weight: FontWeight.bold),
-      bodyLarge: getOrbitronStyle(size: 16, color: textSecondary),
-      bodyMedium: getOrbitronStyle(size: 14, color: textTertiary),
-      labelLarge: getOrbitronStyle(
+      displayLarge: _getRobotoStyle(size: 32, weight: FontWeight.bold),
+      displayMedium: _getRobotoStyle(size: 28, weight: FontWeight.bold),
+      titleLarge: _getRobotoStyle(size: 40, weight: FontWeight.w400),
+      bodyLarge: _getRobotoStyle(size: 16, color: textSecondary),
+      bodyMedium: _getRobotoStyle(size: 14, color: textTertiary),
+      labelLarge: _getRobotoStyle(
           size: 20, weight: FontWeight.bold, color: primaryDark),
-      labelMedium: getOrbitronStyle(size: 18, color: accentOrange),
-      labelSmall: getOrbitronStyle(size: 12, color: textTertiary),
+      labelMedium: _getRobotoStyle(size: 18, color: accentOrange),
+      labelSmall: _getRobotoStyle(size: 12, color: textTertiary),
     ),
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
       iconTheme: const IconThemeData(color: textPrimary),
-      titleTextStyle: getOrbitronStyle(size: 24, weight: FontWeight.bold),
+      titleTextStyle: _getRobotoStyle(size: 24, weight: FontWeight.bold),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
@@ -58,7 +59,7 @@ class AppTheme {
         ),
         elevation: 6,
         shadowColor: accentOrange.withOpacity(0.5),
-        textStyle: getOrbitronStyle(
+        textStyle: _getRobotoStyle(
             size: 18, weight: FontWeight.bold, color: primaryDark),
       ),
     ),
@@ -66,7 +67,7 @@ class AppTheme {
       style: TextButton.styleFrom(
         foregroundColor: accentOrange,
         textStyle:
-            getOrbitronStyle(size: 16, decoration: TextDecoration.underline),
+            _getRobotoStyle(size: 16, decoration: TextDecoration.underline),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
@@ -83,11 +84,11 @@ class AppTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(color: accentOrange, width: 2),
+        borderSide: const BorderSide(color: accentOrange, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(borderRadius),
-        borderSide: BorderSide(color: errorRed, width: 2),
+        borderSide: const BorderSide(color: errorRed, width: 2),
       ),
       prefixIconColor: accentOrange,
     ),
@@ -99,6 +100,23 @@ class AppTheme {
       elevation: 8,
     ),
   );
+
+  static TextStyle _getRobotoStyle({
+    double size = 14,
+    FontWeight weight = FontWeight.normal,
+    Color color = textPrimary,
+    TextDecoration? decoration,
+  }) {
+    return GoogleFonts.roboto(
+      textStyle: TextStyle(
+        fontSize: size,
+        fontWeight: weight,
+        color: color,
+        decoration: decoration,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
 
   static TextStyle getOrbitronStyle({
     double size = 14,

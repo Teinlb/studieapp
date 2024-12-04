@@ -70,7 +70,7 @@ class _LearningViewState extends State<LearningView> {
                 height: 200,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceVariant,
+                  color: theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -107,6 +107,7 @@ class _LearningViewState extends State<LearningView> {
                   scrollDirection: Axis.horizontal,
                   itemCount: recentFiles.length,
                   itemBuilder: (context, index) {
+                    _loadRecentFiles();
                     return _buildRecentFileCard(recentFiles[index], theme);
                   },
                 ),

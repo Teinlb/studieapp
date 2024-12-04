@@ -6,7 +6,8 @@ import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
 import 'package:studieapp/utilities/dialogs/publish_dialog.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
-import 'dart:developer' as devtools show log;
+import 'package:google_fonts/google_fonts.dart';
+// import 'dart:developer' as devtools show log;
 
 class WordPair {
   String word;
@@ -86,7 +87,12 @@ class _WordListViewState extends State<WordListView> {
   void _publishFile() async {
     final shouldPublish = await showPublishDialog(context);
     if (shouldPublish) {
-      _cloudService.uploadOrUpdateFile(file: widget.file);
+      final updatedFile = widget.file.copyWith(
+        content: WordPair.toFileContent(
+            _words), // Gebruik de bijgewerkte woordenlijst
+      );
+      _cloudService.uploadOrUpdateFile(
+          file: updatedFile); // Gebruik de geüpdatete file
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Woordenlijst gepubliceerd'),
@@ -170,48 +176,46 @@ class _WordListViewState extends State<WordListView> {
     required IconData icon,
     required VoidCallback onPressed,
   }) {
-    return Expanded(
-      child: AspectRatio(
-        aspectRatio: 1, // Make buttons square
-        child: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppTheme.tertiaryBlue.withAlpha(
-                220), // Gebruik withAlpha in plaats van niet-bestaande methode
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: const [
-              BoxShadow(
-                color: Color.fromARGB(255, 0, 0, 0),
-                offset: Offset(0, 8),
-                blurRadius: 0,
-                spreadRadius: 0,
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              padding: const EdgeInsets.all(12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+    return AspectRatio(
+      aspectRatio: 1, // Zorgt ervoor dat de knoppen vierkant blijven
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppTheme.tertiaryBlue.withAlpha(220),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromARGB(255, 0, 0, 0),
+              offset: Offset(0, 8),
+              blurRadius: 0,
+              spreadRadius: 0,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 36, color: Colors.white),
-                const SizedBox(height: 8),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontFamily: 'Schyler',
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.all(12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 36, color: Colors.white),
+              const SizedBox(height: 8),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    // Vervang 'poppins' met jouw gewenste font
+                    textStyle: TextStyle(
                       color: Colors.white.withOpacity(0.95),
                       fontSize: 16,
-                      fontWeight: FontWeight.w700,
                       letterSpacing: 1.2,
                       shadows: [
                         Shadow(
@@ -221,13 +225,13 @@ class _WordListViewState extends State<WordListView> {
                         ),
                       ],
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -246,7 +250,7 @@ class _WordListViewState extends State<WordListView> {
         elevation: 0,
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
+            icon: const Icon(Icons.more_vert, color: AppTheme.textPrimary),
             onSelected: (String choice) {
               switch (choice) {
                 case 'publish':
@@ -258,19 +262,23 @@ class _WordListViewState extends State<WordListView> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'publish',
                 child: ListTile(
-                  leading: Icon(Icons.public),
-                  title: Text('Publiceren'),
+                  leading:
+                      const Icon(Icons.public, color: AppTheme.accentOrange),
+                  title: Text('Publiceren', style: textTheme.bodyLarge),
                 ),
               ),
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'delete',
                 child: ListTile(
-                  leading: Icon(Icons.delete, color: Colors.red),
-                  title:
-                      Text('Verwijderen', style: TextStyle(color: Colors.red)),
+                  leading: const Icon(Icons.delete, color: AppTheme.errorRed),
+                  title: Text(
+                    'Verwijderen',
+                    style:
+                        textTheme.bodyLarge!.copyWith(color: AppTheme.errorRed),
+                  ),
                 ),
               ),
             ],
@@ -283,20 +291,18 @@ class _WordListViewState extends State<WordListView> {
           // Details Card
           Card(
             color: AppTheme.secondaryBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+            ),
+            elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    widget.file.title,
-                    style: textTheme.titleLarge,
-                  ),
+                  Text(widget.file.title, style: textTheme.titleLarge),
                   const SizedBox(height: 8),
-                  Text(
-                    widget.file.subject,
-                    style: textTheme.bodyLarge,
-                  ),
+                  Text(widget.file.subject, style: textTheme.bodyLarge),
                   if (widget.file.description.isNotEmpty) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -310,12 +316,12 @@ class _WordListViewState extends State<WordListView> {
           ),
           const SizedBox(height: 16),
 
-          // Game Buttons (Redesigned Grid)
+          // Game Buttons Grid
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1, // Make buttons square
+            childAspectRatio: 1,
             children: [
               _buildGameButton(
                 title: 'Flashcards',
@@ -349,31 +355,41 @@ class _WordListViewState extends State<WordListView> {
           const SizedBox(height: 16),
 
           // Search Bar
-
-          Padding(
-            padding: const EdgeInsets.all(4),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterWords,
-              decoration: InputDecoration(
-                hintText: 'Zoek woorden...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _filterWords('');
-                        },
-                      )
-                    : null,
+          TextField(
+            controller: _searchController,
+            onChanged: _filterWords,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: AppTheme.secondaryBlue,
+              hintText: 'Zoek woorden...',
+              hintStyle: textTheme.bodyMedium,
+              prefixIcon:
+                  const Icon(Icons.search, color: AppTheme.accentOrange),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear,
+                          color: AppTheme.textSecondary),
+                      onPressed: () {
+                        _searchController.clear();
+                        _filterWords('');
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
           const SizedBox(height: 16),
 
-          // Words List with Editing Functionality
+          // Words List
           Card(
+            color: AppTheme.secondaryBlue,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+            ),
+            elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -384,53 +400,62 @@ class _WordListViewState extends State<WordListView> {
                     children: [
                       Text('Woorden', style: textTheme.displayMedium),
                       IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
+                        icon: const Icon(Icons.add_circle_outline,
+                            color: AppTheme.accentOrange),
                         onPressed: () => _startEditing(_filteredWords.length),
                       ),
                     ],
                   ),
-
-                  // Editing Row
                   if (_isEditing)
-                    Card(
-                      color: AppTheme.secondaryBlue.withOpacity(0.5),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: _wordController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Woord',
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _wordController,
+                              decoration: InputDecoration(
+                                hintText: 'Woord',
+                                filled: true,
+                                fillColor:
+                                    AppTheme.secondaryBlue.withOpacity(0.5),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      AppTheme.borderRadius),
+                                  borderSide: BorderSide.none,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _translationController,
-                                decoration: const InputDecoration(
-                                  hintText: 'Vertaling',
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: _translationController,
+                              decoration: InputDecoration(
+                                hintText: 'Vertaling',
+                                filled: true,
+                                fillColor:
+                                    AppTheme.secondaryBlue.withOpacity(0.5),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      AppTheme.borderRadius),
+                                  borderSide: BorderSide.none,
                                 ),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.save, color: Colors.green),
-                              onPressed: _saveEdit,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.red),
-                              onPressed: _cancelEdit,
-                            ),
-                          ],
-                        ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.save, color: Colors.green),
+                            onPressed: _saveEdit,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.cancel, color: Colors.red),
+                            onPressed: _cancelEdit,
+                          ),
+                        ],
                       ),
                     ),
-
                   const SizedBox(height: 16),
-
-                  // Word List
                   _filteredWords.isEmpty
                       ? Center(
                           child: Text(
@@ -442,23 +467,26 @@ class _WordListViewState extends State<WordListView> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _filteredWords.length,
-                          separatorBuilder: (context, index) => const Divider(),
+                          separatorBuilder: (context, index) =>
+                              const Divider(color: AppTheme.textSecondary),
                           itemBuilder: (context, index) {
                             final pair = _filteredWords[index];
                             return ListTile(
-                              title: Text(pair.word),
-                              subtitle: Text(pair.translation),
+                              title:
+                                  Text(pair.word, style: textTheme.bodyLarge),
+                              subtitle: Text(pair.translation,
+                                  style: textTheme.bodyMedium),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   IconButton(
                                     icon: const Icon(Icons.edit,
-                                        color: Colors.orange),
+                                        color: AppTheme.accentOrange),
                                     onPressed: () => _startEditing(index),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.delete,
-                                        color: Colors.red),
+                                        color: AppTheme.errorRed),
                                     onPressed: () => _deleteWord(index),
                                   ),
                                 ],

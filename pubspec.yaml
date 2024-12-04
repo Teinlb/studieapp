@@ -49,6 +49,7 @@ dependencies:
     file_picker: ^5.2.1
     csv: ^5.0.0
     excel: ^2.0.0
+    google_fonts: ^5.0.0
 
 dev_dependencies:
     flutter_test:
