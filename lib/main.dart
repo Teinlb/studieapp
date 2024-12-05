@@ -5,6 +5,8 @@ import 'package:studieapp/constants/routes.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/views/auth/login_view.dart';
 import 'package:studieapp/views/main/learning/cloud/publish_file_list_view.dart';
+import 'package:studieapp/views/main/learning/cloud/published_file_list_view.dart';
+import 'package:studieapp/views/main/learning/cloud/search_files_view.dart';
 import 'package:studieapp/views/main/learning/local/summary/create_summary_view.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/create_wordlist_view.dart';
 import 'package:studieapp/views/main/learning/local/file_list_view.dart';
@@ -37,7 +39,9 @@ void main() {
         fileListRoute: (context) => const FileListView(),
         createWordlistRoute: (context) => const CreateWordListView(),
         createSummaryRoute: (context) => const CreateSummaryView(),
+        searchFilesRoute: (context) => const SearchFilesView(),
         publishFileListRoute: (context) => const PublishFileListView(),
+        publishedFileListRoute: (context) => const PublishedFileListView(),
 
         // planning
         planningRoute: (context) => const PlanningView(),

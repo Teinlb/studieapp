@@ -15,7 +15,10 @@ const learningRoute = '/learning/';
 const fileListRoute = '/filelist/';
 const createWordlistRoute = '/createwordlist';
 const createSummaryRoute = '/createsummary';
+
+const searchFilesRoute = '/search-files/';
 const publishFileListRoute = '/publish-filelist/';
+const publishedFileListRoute = '/published-filelist/';
 
 // planning
 const planningRoute = '/planning/';

@@ -4,7 +4,7 @@ import 'package:studieapp/services/cloud/cloud_storage_constants.dart';
 
 @immutable
 class CloudFile {
-  final int userId;
+  final String userId;
   final String title;
   final String subject;
   final String description;

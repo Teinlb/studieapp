@@ -259,7 +259,7 @@ class _LearningViewState extends State<LearningView> {
                 subtitle: 'Ontdek woordenlijsten en samenvattingen van anderen',
                 icon: Icons.search,
                 onTap: () {
-                  // Navigate to search page
+                  Navigator.of(context).pushNamed(searchFilesRoute);
                 },
                 theme: theme,
               ),
@@ -279,7 +279,7 @@ class _LearningViewState extends State<LearningView> {
                 subtitle: 'Bekijk en beheer je gedeelde bestanden',
                 icon: Icons.person_outline,
                 onTap: () {
-                  // Navigate to shared content page
+                  Navigator.of(context).pushNamed(publishedFileListRoute);
                 },
                 theme: theme,
               ),

@@ -8,68 +8,39 @@ import 'package:studieapp/services/local/local_service.dart';
 class FirebaseCloudStorage {
   final files = FirebaseFirestore.instance.collection('files');
 
-  // Future<void> deleteNote({required String documentId}) async {
-  //   try {
-  //     await notes.doc(documentId).delete();
-  //   } catch (e) {
-  //     throw CouldNotDeleteNoteException();
-  //   }
-  // }
+  // Haal gefilterde bestanden op
+  Future<List<CloudFile>> fetchFilteredFiles({
+    String? title,
+    String? subject,
+    String? fileType,
+  }) async {
+    try {
+      print('Filters: title=$title, subject=$subject, fileType=$fileType');
+      Query<Map<String, dynamic>> query = files;
 
-  // Future<void> updateNote({
-  //   required String documentId,
-  //   required String text,
-  // }) async {
-  //   try {
-  //     notes.doc(documentId).update({textFieldName: text});
-  //   } catch (e) {
-  //     throw CouldNotUpdateNoteException();
-  //   }
-  // }
+      if (title != null && title.isNotEmpty) {
+        query = query
+            .where(titleFieldName, isGreaterThanOrEqualTo: title)
+            .where(titleFieldName, isLessThanOrEqualTo: "$title\uf8ff");
+      }
+      if (subject != null && subject.isNotEmpty) {
+        query = query.where(subjectFieldName, isEqualTo: subject);
+      }
+      if (fileType != null && fileType.isNotEmpty) {
+        query = query.where(typeFieldName, isEqualTo: fileType);
+      }
 
-  // Stream<Iterable<CloudNote>> allNotes({required String ownerUserId}) =>
-  //     notes.snapshots().map((event) => event.docs
-  //         .map((doc) => CloudNote.fromSnapshot(doc))
-  //         .where((note) => note.ownerUserId == ownerUserId));
+      final querySnapshot = await query.get();
+      return querySnapshot.docs
+          .map((doc) => CloudFile.fromSnapshot(doc))
+          .toList();
+    } catch (e) {
+      print('Error in fetchFilteredFiles: $e');
+      throw CouldNotFetchFilteredFilesException();
+    }
+  }
 
-  // Future<Iterable<CloudNote>> getNotes({required String ownerUserId}) async {
-  //   try {
-  //     return await notes
-  //         .where(
-  //           ownerUserIdFieldName,
-  //           isEqualTo: ownerUserId,
-  //         )
-  //         .get()
-  //         .then(
-  //           (value) => value.docs.map((doc) => CloudNote.fromSnapshot(doc)),
-  //         );
-  //   } catch (e) {
-  //     throw CouldNotGetAllNotesException();
-  //   }
-  // }
-
-  // Future<CloudNote> createNewNote({required String ownerUserId}) async {
-  //   final document = await notes.add({
-  //     ownerUserIdFieldName: ownerUserId,
-  //     textFieldName: '',
-  //   });
-  //   final fetchedNote = await document.get();
-  //   return CloudNote(
-  //     documentId: fetchedNote.id,
-  //     ownerUserId: ownerUserId,
-  //     text: '',
-  //   );
-  // }
-
-  // createUser
-
-  // getUser
-
-  // updateUser
-
-  // deleteUser
-
-  // getFile
+  // Download een bestand
   Future<CloudFile> downloadFile({required String cloudId}) async {
     try {
       if (cloudId.isEmpty) throw ArgumentError('cloudId must not be empty');
@@ -82,10 +53,9 @@ class FirebaseCloudStorage {
     }
   }
 
-  // publishFile
+  // Upload of update een bestand
   Future<void> uploadOrUpdateFile({required File file}) async {
     try {
-      print(file.cloudId);
       if (file.cloudId != null && file.cloudId!.isNotEmpty) {
         // Document bestaat al, update het
         final updatedData = {
@@ -98,7 +68,6 @@ class FirebaseCloudStorage {
         };
 
         await files.doc(file.cloudId).update(updatedData);
-        return;
       } else {
         // Document bestaat nog niet, maak een nieuw aan
         final document = await files.add({
@@ -110,14 +79,13 @@ class FirebaseCloudStorage {
           typeFieldName: file.type,
         });
         LocalService().updateCloudIdFile(id: file.id, cloudId: document.id);
-        return;
       }
     } catch (e) {
       throw CouldNotUploadOrUpdateFileException();
     }
   }
 
-  // deleteFile
+  // Verwijder een bestand
   Future<void> deleteFile({required String cloudId}) async {
     try {
       await files.doc(cloudId).delete();
@@ -131,3 +99,13 @@ class FirebaseCloudStorage {
   FirebaseCloudStorage._sharedInstance();
   factory FirebaseCloudStorage() => _shared;
 }
+
+
+
+// createUser
+
+// getUser
+
+// updateUser
+
+// deleteUser
