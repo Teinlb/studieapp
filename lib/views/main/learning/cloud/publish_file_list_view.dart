@@ -33,18 +33,21 @@ class _PublishFileListViewState extends State<PublishFileListView> {
   }
 
   Future<void> _fetchFiles() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final fetchedFiles = await _localService.getAllFiles();
       setState(() {
         _files = fetchedFiles.toList();
         _filteredFiles = _files;
-        _isLoading = false;
       });
     } catch (e) {
+      print('Error fetching files: $e');
+    } finally {
       setState(() {
         _isLoading = false;
       });
-      print('Error fetching files: $e');
     }
   }
 
@@ -81,26 +84,26 @@ class _PublishFileListViewState extends State<PublishFileListView> {
       appBar: AppBar(
         title: const Text('Deel Jouw Bestanden'),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Zoek bestanden...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Zoek bestanden...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onChanged: _filterFiles,
                 ),
               ),
-              onChanged: _filterFiles,
-            ),
-          ),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _filteredFiles.isEmpty
+              Expanded(
+                child: _filteredFiles.isEmpty
                     ? const Center(child: Text('Geen bestanden gevonden'))
                     : ListView.builder(
                         itemCount: _filteredFiles.length,
@@ -144,7 +147,25 @@ class _PublishFileListViewState extends State<PublishFileListView> {
                           );
                         },
                       ),
+              ),
+            ],
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withOpacity(0.7), // Minder transparant
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white, // Achtergrondkleur voor contrast
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const CircularProgressIndicator(
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

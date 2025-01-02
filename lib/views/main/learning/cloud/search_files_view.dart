@@ -20,7 +20,7 @@ class _SearchFilesViewState extends State<SearchFilesView> {
     'Wiskunde',
     'Natuurkunde',
     'Biologie',
-    'Scheikunde'
+    'Scheikunde',
   ];
   final List<String> fileTypes = ['Samenvatting', 'Woordenlijst'];
 
@@ -28,20 +28,25 @@ class _SearchFilesViewState extends State<SearchFilesView> {
     try {
       final cloudStorage = FirebaseCloudStorage();
 
-      final fileType =
-          selectedFileType == 'Samenvatting' ? 'summary' : 'wordlist';
+      final fileType = selectedFileType == null
+          ? null
+          : (selectedFileType == 'Samenvatting' ? 'summary' : 'wordlist');
 
       final files = await cloudStorage.fetchFilteredFiles(
-        title: _searchQuery,
+        title: _searchQuery?.isNotEmpty == true ? _searchQuery : null,
         subject: selectedSubject,
         fileType: fileType,
       );
+
       setState(() {
-        _files = files!;
+        _files = files;
       });
     } catch (e) {
-      // Toon een foutmelding
+      // Foutmelding loggen en gebruikersfeedback geven
       print('Error fetching files: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fout bij ophalen bestanden')),
+      );
     }
   }
 
@@ -49,8 +54,10 @@ class _SearchFilesViewState extends State<SearchFilesView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Studiebestanden',
-            style: AppTheme.theme.appBarTheme.titleTextStyle),
+        title: Text(
+          'Studiebestanden',
+          style: AppTheme.theme.appBarTheme.titleTextStyle,
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -75,8 +82,10 @@ class _SearchFilesViewState extends State<SearchFilesView> {
                     items: subjects.map((subject) {
                       return DropdownMenuItem(
                         value: subject,
-                        child: Text(subject,
-                            style: AppTheme.theme.textTheme.bodyMedium),
+                        child: Text(
+                          subject,
+                          style: AppTheme.theme.textTheme.bodyMedium,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -97,8 +106,10 @@ class _SearchFilesViewState extends State<SearchFilesView> {
                     items: fileTypes.map((type) {
                       return DropdownMenuItem(
                         value: type,
-                        child: Text(type,
-                            style: AppTheme.theme.textTheme.bodyMedium),
+                        child: Text(
+                          type,
+                          style: AppTheme.theme.textTheme.bodyMedium,
+                        ),
                       );
                     }).toList(),
                   ),
@@ -122,29 +133,33 @@ class _SearchFilesViewState extends State<SearchFilesView> {
             const SizedBox(height: 16),
             // Resultaten
             Expanded(
-              child: ListView.builder(
-                itemCount: _files.length,
-                itemBuilder: (context, index) {
-                  final file = _files[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(
-                        file.title,
-                        style: AppTheme.theme.textTheme.bodyLarge,
-                      ),
-                      subtitle: Text(
-                        file.description,
-                        style: AppTheme.theme.textTheme.bodyMedium,
-                      ),
-                      trailing: const Icon(Icons.arrow_forward,
-                          color: AppTheme.accentOrange),
-                      onTap: () {
-                        // Open detailpagina
+              child: _files.isEmpty
+                  ? const Center(
+                      child: Text('Geen bestanden gevonden'),
+                    )
+                  : ListView.builder(
+                      itemCount: _files.length,
+                      itemBuilder: (context, index) {
+                        final file = _files[index];
+                        return Card(
+                          child: ListTile(
+                            title: Text(
+                              file.title,
+                              style: AppTheme.theme.textTheme.bodyLarge,
+                            ),
+                            subtitle: Text(
+                              file.description,
+                              style: AppTheme.theme.textTheme.bodyMedium,
+                            ),
+                            trailing: const Icon(Icons.arrow_forward,
+                                color: AppTheme.accentOrange),
+                            onTap: () {
+                              // Open detailpagina
+                            },
+                          ),
+                        );
                       },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
