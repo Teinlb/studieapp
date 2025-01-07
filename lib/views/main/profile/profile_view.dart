@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/constants/routes.dart';
+import 'package:studieapp/services/local/crud_constants.dart';
+import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/logout_dialog.dart';
 
@@ -12,75 +14,185 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  // Mock data - replace with actual user data from your backend
-  final String username = "Student123";
-  final int streak = 7;
-  final int xp = 1250;
+  late LocalService _localService;
+  late Future<Map<String, dynamic>> userDataFuture;
+  final TextEditingController _usernameController = TextEditingController();
+
+  String get userId => AuthService.firebase().currentUser!.id;
+
+  @override
+  void initState() {
+    super.initState();
+    _localService = LocalService();
+    userDataFuture = _localService.fetchUserData(userId: userId);
+  }
 
   // main widget
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildProfileCard(),
-          const SizedBox(height: 24),
-          _buildPomodoroSection(),
-          const SizedBox(height: 24),
-          _buildSettingsSection(),
-          const SizedBox(height: 24),
-          _buildLogoutButton(),
-        ],
-      ),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: userDataFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        } else if (snapshot.hasData) {
+          final userData = snapshot.data!;
+          final username = userData[usernameColumn] as String;
+          final streak = userData[streakColumn] as int? ?? 0;
+          final xp = userData[experienceColumn] as int? ?? 0;
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildProfileCard(username, streak, xp),
+                const SizedBox(height: 24),
+                _buildPomodoroSection(),
+                const SizedBox(height: 24),
+                _buildSettingsSection(),
+                const SizedBox(height: 24),
+                _buildLogoutButton(),
+              ],
+            ),
+          );
+        } else {
+          return const Center(child: Text('No data found'));
+        }
+      },
     );
   }
 
-  Widget _buildProfileCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: AppTheme.accentOrange,
-              child: Icon(
-                Icons.person,
-                size: 40,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              username,
-              style: AppTheme.getOrbitronStyle(
-                size: 24,
-                weight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  Widget _buildProfileCard(String username, int streak, int xp) {
+    bool isEditing = false;
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               children: [
-                _buildStatColumn(
-                  icon: Icons.local_fire_department,
-                  value: streak.toString(),
-                  label: 'Streak',
+                const CircleAvatar(
+                  radius: 40,
+                  backgroundColor: AppTheme.accentOrange,
+                  child: Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.black,
+                  ),
                 ),
-                _buildStatColumn(
-                  icon: Icons.star,
-                  value: xp.toString(),
-                  label: 'XP',
+                const SizedBox(height: 16),
+                if (isEditing)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _usernameController..text = username,
+                          decoration: const InputDecoration(
+                            labelText: 'Nieuwe gebruikersnaam',
+                            border: OutlineInputBorder(),
+                          ),
+                          maxLength: 20,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.check,
+                            color: AppTheme.accentOrange),
+                        onPressed: () {
+                          if (_usernameController.text.length <= 20) {
+                            setState(() {
+                              isEditing = false;
+                            });
+                            _updateUsername(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Username must be 20 characters or less')),
+                            );
+                          }
+                        },
+                      ),
+                    ],
+                  )
+                else
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Center(
+                        child: Text(
+                          username,
+                          style: AppTheme.getOrbitronStyle(
+                            size: 24,
+                            weight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.edit,
+                            color: AppTheme.accentOrange,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isEditing = true;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatColumn(
+                      icon: Icons.local_fire_department,
+                      value: streak.toString(),
+                      label: 'Streak',
+                    ),
+                    _buildStatColumn(
+                      icon: Icons.star,
+                      value: xp.toString(),
+                      label: 'XP',
+                    ),
+                    _buildLeaderboardButton(),
+                  ],
                 ),
-                _buildLeaderboardButton(),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  Future<void> _updateUsername(BuildContext context) async {
+    final newUsername = _usernameController.text.trim();
+    if (newUsername.isNotEmpty) {
+      try {
+        await _localService.changeUsername(userId, newUsername);
+        setState(() {
+          userDataFuture = _localService.fetchUserData(userId: userId);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username updated successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating username: $e')),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Username cannot be empty!')),
+      );
+    }
   }
 
   Widget _buildStatColumn({

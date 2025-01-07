@@ -120,7 +120,7 @@ class _SearchFilesViewState extends State<SearchFilesView> {
             // Zoekbalk
             TextField(
               decoration: const InputDecoration(
-                hintText: 'Zoek op naam of beschrijving',
+                hintText: 'Zoek op naam',
                 prefixIcon: Icon(Icons.search, color: AppTheme.accentOrange),
               ),
               onChanged: (value) {

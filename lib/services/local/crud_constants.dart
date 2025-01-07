@@ -8,6 +8,11 @@ const projectTable = 'projects';
 
 const userTable = 'user';
 const emailColumn = 'email';
+const usernameColumn = 'username';
+const experienceColumn = 'experience_points';
+const openTimeColumn = 'last_opened';
+const streakColumn = 'streak';
+const sessionsColumn = 'sessions';
 
 const idColumn = 'id';
 const userIdColumn = 'user_id';
@@ -31,6 +36,11 @@ const isCompletedColumn = 'completed';
 const createUserTable = '''CREATE TABLE IF NOT EXISTS "$userTable" (
   "$idColumn" TEXT NOT NULL UNIQUE,
   "$emailColumn" TEXT NOT NULL UNIQUE,
+  "$usernameColumn" TEXT,
+  "$experienceColumn" INTEGER,
+  "$openTimeColumn" TEXT NOT NULL,
+  "$streakColumn" INTEGER,
+  "$sessionsColumn" INTEGER,
   PRIMARY KEY("$idColumn")
 );''';
 

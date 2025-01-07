@@ -6,6 +6,7 @@ import 'package:studieapp/services/auth/auth_exceptions.dart';
 
 import 'package:firebase_auth/firebase_auth.dart'
     show FirebaseAuth, FirebaseAuthException;
+import 'package:studieapp/services/local/local_service.dart';
 
 class FirebaseAuthProvider implements AuthProvider {
   @override
@@ -26,6 +27,7 @@ class FirebaseAuthProvider implements AuthProvider {
         password: password,
       );
       final user = currentUser;
+      await LocalService().getOrCreateUser(email: email);
       if (user != null) {
         return user;
       } else {

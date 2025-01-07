@@ -93,6 +93,13 @@ class LocalService {
         }
       });
 
+  void dispose() {
+    _filesStreamController.close();
+    _tasksStreamController.close();
+    _deadlinesStreamController.close();
+    _projectsStreamController.close();
+  }
+
   Future<DatabaseUser> getOrCreateUser({
     required String email,
     bool setAsCurrentUser = true,
@@ -727,6 +734,11 @@ class LocalService {
     await db.insert(userTable, {
       idColumn: firebaseUserId,
       emailColumn: email.toLowerCase(),
+      usernameColumn: 'anonymous',
+      experienceColumn: 0,
+      openTimeColumn: DateTime.now().toIso8601String(),
+      streakColumn: 0,
+      sessionsColumn: 0,
     });
 
     return DatabaseUser(
@@ -746,6 +758,95 @@ class LocalService {
     if (deletedCount != 1) {
       throw CouldNotDeleteUser();
     }
+  }
+
+  Future<Map<String, dynamic>> fetchUserData({required String userId}) async {
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+
+    final user = await db.query(
+      userTable,
+      where: '$idColumn = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+
+    return user.first;
+  }
+
+  Future<void> changeUsername(String id, String username) async {
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+
+    final user = await db.query(
+      userTable,
+      where: '$idColumn = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (user.isEmpty) {
+      throw Exception('User not found');
+    }
+
+    await db.update(
+      userTable,
+      {
+        usernameColumn: username,
+      },
+      where: '$idColumn = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> completedFile(String id, int addedXP) async {
+    await _ensureDbIsOpen();
+    final db = _getDatabaseOrThrow();
+
+    final user = await db.query(
+      userTable,
+      where: '$idColumn = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (user.isEmpty) {
+      throw Exception('User not found');
+    }
+
+    final currentUser = user.first;
+
+    // Haal bestaande waarden op
+    final currentXP = currentUser[experienceColumn] as int? ?? 0;
+    final currentStreak = currentUser[streakColumn] as int? ?? 0;
+    final lastOpenedString = currentUser[openTimeColumn] as String;
+    final lastOpened = DateTime.parse(lastOpenedString);
+
+    // Bereken XP en streak
+    final now = DateTime.now();
+    int updatedStreak = currentStreak;
+
+    // Controleer of de gebruiker gisteren actief was
+    if (now.difference(lastOpened).inDays == 1) {
+      updatedStreak += 1;
+    } else if (now.difference(lastOpened).inDays > 1) {
+      updatedStreak = 1; // Reset streak
+    }
+
+    // Werk XP en andere velden bij
+    final updatedXP = currentXP + addedXP;
+
+    // Werk de gebruiker bij in de database
+    await db.update(
+      userTable,
+      {
+        experienceColumn: updatedXP,
+        streakColumn: updatedStreak,
+        openTimeColumn: now.toIso8601String(),
+      },
+      where: '$idColumn = ?',
+      whereArgs: [id],
+    );
   }
 
   Database _getDatabaseOrThrow() {

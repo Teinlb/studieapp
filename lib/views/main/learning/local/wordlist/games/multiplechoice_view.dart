@@ -1,44 +1,40 @@
-// _localService.completedFile(userId, xp);
-
 import 'package:flutter/material.dart';
 import 'package:studieapp/models/file.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
-import 'dart:math' as math;
 
-class FlashcardsView extends StatefulWidget {
+class MultipleChoiceView extends StatefulWidget {
   final File file;
 
-  const FlashcardsView({super.key, required this.file});
+  const MultipleChoiceView({super.key, required this.file});
 
   @override
-  State<FlashcardsView> createState() => _FlashcardsViewState();
+  State<MultipleChoiceView> createState() => _MultipleChoiceViewState();
 }
 
-class _FlashcardsViewState extends State<FlashcardsView>
-    with SingleTickerProviderStateMixin {
+class _MultipleChoiceViewState extends State<MultipleChoiceView> {
   late LocalService _localService;
   late List<Map<String, dynamic>> _words;
-  late List<bool> _knewWord;
-  late AnimationController _controller;
-  late Animation<double> _frontRotation;
-  late Animation<double> _backRotation;
-  late Animation<double> _frontOpacity;
-  late Animation<double> _backOpacity;
+  late List<bool> _answeredCorrectly;
+  int _currentIndex = 0;
+  late List<String> _currentOptions;
+  bool _hasAnswered = false;
+  bool _hasCompletedSet = false;
+  int? _selectedOptionIndex;
+
+  // Constants
+  static const int _numOptions = 4;
+  static const Duration _answerDelay = Duration(milliseconds: 1000);
 
   String get userId => AuthService.firebase().currentUser!.id;
-
-  int _currentIndex = 0;
-  bool _showTranslation = false;
-  bool _hasCompletedSet = false;
 
   @override
   void initState() {
     super.initState();
     _localService = LocalService();
     _initializeWords();
-    _setupAnimations();
+    _generateOptions();
   }
 
   void _initializeWords() {
@@ -54,98 +50,90 @@ class _FlashcardsViewState extends State<FlashcardsView>
         };
       }).toList();
 
-      if (parsedWords.isEmpty) {
-        throw Exception('No valid words found in the file');
+      if (parsedWords.length < _numOptions) {
+        throw Exception(
+            'Niet genoeg woorden voor multiple choice (minimaal $_numOptions nodig)');
       }
 
       _words = parsedWords;
-      _knewWord = List<bool>.filled(_words.length, false);
+      _answeredCorrectly = List<bool>.filled(_words.length, false);
     } catch (e) {
-      // We'll handle this in build() method
       _words = [];
-      _knewWord = [];
+      _answeredCorrectly = [];
     }
   }
 
-  void _setupAnimations() {
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: this,
-    );
+  void _generateOptions() {
+    if (_words.isEmpty) return;
 
-    _frontRotation = Tween<double>(begin: 0, end: math.pi / 2).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
-      ),
-    );
+    // Correct answer is always included
+    final correctAnswer = _words[_currentIndex]['translation'];
 
-    _backRotation = Tween<double>(begin: -math.pi / 2, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    // Get all possible translations except the current word
+    final possibleOptions = _words
+        .where((word) => word['translation'] != correctAnswer)
+        .map((word) => word['translation'])
+        .toList();
 
-    _frontOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.25, curve: Curves.easeIn),
-      ),
-    );
+    // Shuffle and take first (_numOptions - 1) items
+    possibleOptions.shuffle();
+    final wrongOptions = possibleOptions.take(_numOptions - 1).toList();
 
-    _backOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.75, 1.0, curve: Curves.easeOut),
-      ),
-    );
+    // Combine correct answer with wrong options and shuffle
+    _currentOptions = [...wrongOptions, correctAnswer];
+    _currentOptions.shuffle();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  void _handleAnswer(int optionIndex) {
+    if (_hasAnswered) return;
 
-  void _nextWord(bool knew) {
+    final isCorrect =
+        _currentOptions[optionIndex] == _words[_currentIndex]['translation'];
+
     setState(() {
-      _knewWord[_currentIndex] = knew;
-      if (_showTranslation) {
-        _flipCard();
-      }
-      if (_currentIndex < _words.length - 1) {
-        _currentIndex++;
-      } else {
-        _showResultsDialog();
-      }
+      _hasAnswered = true;
+      _selectedOptionIndex = optionIndex;
+      _answeredCorrectly[_currentIndex] = isCorrect;
+    });
+
+    Future.delayed(_answerDelay, () {
+      if (!mounted) return;
+
+      setState(() {
+        if (_currentIndex < _words.length - 1) {
+          _currentIndex++;
+          _generateOptions();
+          _hasAnswered = false;
+          _selectedOptionIndex = null;
+        } else {
+          _showResultsDialog();
+        }
+      });
     });
   }
 
-  Future<void> _flipCard() async {
-    if (_controller.status == AnimationStatus.dismissed) {
-      await _controller.forward();
-    } else if (_controller.status == AnimationStatus.completed) {
-      await _controller.reverse();
-    }
-    if (mounted) {
-      setState(() {
-        _showTranslation = !_showTranslation;
-      });
-    }
+  void _handleCompletion() {
+    setState(() {
+      _hasCompletedSet = true;
+    });
+
+    final int xpEarned = _answeredCorrectly.where((correct) => correct).length;
+    _localService.completedFile(userId, xpEarned);
+
+    _showCompletionDialog(xpEarned);
   }
 
-  void _restartLearning({bool onlyUnknown = false}) {
+  void _restartLearning({bool onlyIncorrect = false}) {
     setState(() {
-      if (onlyUnknown) {
-        final unknownWords = _words
+      if (onlyIncorrect) {
+        final incorrectWords = _words
             .asMap()
             .entries
-            .where((entry) => !_knewWord[entry.key])
+            .where((entry) => !_answeredCorrectly[entry.key])
             .map((entry) => entry.value)
             .toList();
 
-        if (unknownWords.isEmpty) {
+        if (incorrectWords.isEmpty) {
           Navigator.pop(context);
           if (!_hasCompletedSet) {
             _handleCompletion();
@@ -155,26 +143,18 @@ class _FlashcardsViewState extends State<FlashcardsView>
           return;
         }
 
-        _words = unknownWords;
-        _knewWord = List<bool>.filled(_words.length, false);
+        _words = incorrectWords;
+        _answeredCorrectly = List<bool>.filled(_words.length, false);
       } else {
-        _knewWord = List<bool>.filled(_words.length, false);
+        _answeredCorrectly = List<bool>.filled(_words.length, false);
       }
+
       _currentIndex = 0;
-      _showTranslation = false;
+      _hasAnswered = false;
+      _selectedOptionIndex = null;
+      _generateOptions();
     });
     Navigator.pop(context);
-  }
-
-  void _handleCompletion() {
-    setState(() {
-      _hasCompletedSet = true;
-    });
-
-    final int xpEarned = _words.length;
-    _localService.completedFile(userId, xpEarned);
-
-    _showCompletionDialog(xpEarned);
   }
 
   void _showAlreadyCompletedDialog() {
@@ -286,7 +266,7 @@ class _FlashcardsViewState extends State<FlashcardsView>
             ),
             const SizedBox(height: 16),
             Text(
-              "Geweldig! Je hebt alle ${_words.length} woorden geleerd!",
+              "Geweldig! Je hebt $xpEarned van de ${_words.length} woorden goed!",
               style: AppTheme.getOrbitronStyle(size: 16),
               textAlign: TextAlign.center,
             ),
@@ -310,9 +290,9 @@ class _FlashcardsViewState extends State<FlashcardsView>
   }
 
   void _showResultsDialog() {
-    final knownCount = _knewWord.where((knew) => knew).length;
-    final percentage = (knownCount / _words.length * 100).round();
-    final allWordsLearned = knownCount == _words.length;
+    final correctCount = _answeredCorrectly.where((correct) => correct).length;
+    final percentage = (correctCount / _words.length * 100).round();
+    final allWordsLearned = correctCount == _words.length;
 
     if (allWordsLearned && !_hasCompletedSet) {
       _handleCompletion();
@@ -355,7 +335,7 @@ class _FlashcardsViewState extends State<FlashcardsView>
             ),
             const SizedBox(height: 16),
             Text(
-              "Je kende $knownCount van de ${_words.length} woorden.",
+              "Je had $correctCount van de ${_words.length} woorden goed.",
               style: AppTheme.getOrbitronStyle(size: 16),
               textAlign: TextAlign.center,
             ),
@@ -367,78 +347,15 @@ class _FlashcardsViewState extends State<FlashcardsView>
             child: const Text("Alles opnieuw"),
           ),
           ElevatedButton(
-            onPressed: () => _restartLearning(onlyUnknown: true),
-            child: const Text("Oefen onbekende woorden"),
+            onPressed: () => _restartLearning(onlyIncorrect: true),
+            child: const Text("Oefen foute woorden"),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCard(
-      String text, Animation<double> rotation, Animation<double> opacity) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform(
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.001)
-            ..rotateY(rotation.value),
-          alignment: Alignment.center,
-          child: Opacity(
-            opacity: opacity.value,
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                  color: AppTheme.tertiaryBlue.withOpacity(0.2),
-                  width: 2,
-                ),
-              ),
-              child: Container(
-                width: double.infinity,
-                height: 220,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppTheme.secondaryBlue.withOpacity(0.9),
-                      AppTheme.secondaryBlue.withOpacity(0.7),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      text,
-                      style: AppTheme.getOrbitronStyle(
-                        size: 28,
-                        weight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Tik om om te draaien',
-                      style: AppTheme.getOrbitronStyle(
-                        size: 14,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
+  // Rest of the widgets and build method remain the same...
 
   Widget _buildProgressIndicator() {
     return Padding(
@@ -461,29 +378,79 @@ class _FlashcardsViewState extends State<FlashcardsView>
     );
   }
 
-  Widget _buildActionButtons() {
+  Color _getOptionBackgroundColor(int index) {
+    if (!_hasAnswered) {
+      return AppTheme.tertiaryBlue.withOpacity(0.1);
+    }
+
+    final isCorrectAnswer =
+        _currentOptions[index] == _words[_currentIndex]['translation'];
+
+    if (index == _selectedOptionIndex) {
+      return isCorrectAnswer
+          ? Colors.green.withOpacity(0.3)
+          : Colors.red.withOpacity(0.3);
+    }
+
+    if (isCorrectAnswer) {
+      return Colors.green.withOpacity(0.3);
+    }
+
+    return AppTheme.tertiaryBlue.withOpacity(0.1);
+  }
+
+  Widget _buildOptionButton(int index) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: _ActionButton(
-              onPressed: () => _nextWord(false),
-              text: "Ken ik niet",
-              icon: Icons.close,
-              color: Colors.red.withOpacity(0.8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _hasAnswered &&
+                    _currentOptions[index] ==
+                        _words[_currentIndex]['translation']
+                ? Colors.green
+                : AppTheme.tertiaryBlue.withOpacity(0.2),
+            width: 2,
+          ),
+          color: _getOptionBackgroundColor(index),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: _hasAnswered ? null : () => _handleAnswer(index),
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _currentOptions[index],
+                      style: AppTheme.getOrbitronStyle(
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  if (_hasAnswered)
+                    Icon(
+                      _currentOptions[index] ==
+                              _words[_currentIndex]['translation']
+                          ? Icons.check_circle
+                          : (_selectedOptionIndex == index
+                              ? Icons.cancel
+                              : null),
+                      color: _currentOptions[index] ==
+                              _words[_currentIndex]['translation']
+                          ? Colors.green
+                          : Colors.red,
+                    ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: _ActionButton(
-              onPressed: () => _nextWord(true),
-              text: "Ken ik wel",
-              icon: Icons.check,
-              color: Colors.green.withOpacity(0.8),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -505,14 +472,14 @@ class _FlashcardsViewState extends State<FlashcardsView>
                     size: 64, color: Colors.orange),
                 const SizedBox(height: 16),
                 Text(
-                  "Geen geldige woorden gevonden",
+                  "Niet genoeg woorden gevonden",
                   style: AppTheme.getOrbitronStyle(
                       size: 24, weight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  "Controleer of het bestand het juiste formaat heeft (woord|vertaling).",
+                  "Er zijn minimaal $_numOptions woorden nodig voor multiple choice vragen.",
                   style: AppTheme.getOrbitronStyle(size: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -522,8 +489,6 @@ class _FlashcardsViewState extends State<FlashcardsView>
         ),
       );
     }
-
-    final word = _words[_currentIndex];
 
     return Scaffold(
       appBar: AppBar(
@@ -535,90 +500,43 @@ class _FlashcardsViewState extends State<FlashcardsView>
             const SizedBox(height: 20),
             _buildProgressIndicator(),
             const SizedBox(height: 32),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GestureDetector(
-                  onTap: _flipCard,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      _buildCard(
-                        word['word'],
-                        _frontRotation,
-                        _frontOpacity,
-                      ),
-                      _buildCard(
-                        word['translation'],
-                        _backRotation,
-                        _backOpacity,
-                      ),
-                    ],
-                  ),
+            Container(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.secondaryBlue.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.tertiaryBlue.withOpacity(0.2),
+                  width: 2,
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-            _buildActionButtons(),
-            const SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final String text;
-  final IconData icon;
-  final Color color;
-
-  const _ActionButton({
-    required this.onPressed,
-    required this.text,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.4),
-            offset: const Offset(0, 4),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, color: Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  text,
-                  style: AppTheme.getOrbitronStyle(
-                    size: 16,
-                    weight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+              child: Text(
+                _words[_currentIndex]['word'],
+                style: AppTheme.getOrbitronStyle(
+                  size: 28,
+                  weight: FontWeight.bold,
                 ),
-              ],
+                textAlign: TextAlign.center,
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            Text(
+              'Kies de juiste vertaling:',
+              style: AppTheme.getOrbitronStyle(
+                size: 16,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                itemCount: _currentOptions.length,
+                itemBuilder: (context, index) => _buildOptionButton(index),
+              ),
+            ),
+          ],
         ),
       ),
     );

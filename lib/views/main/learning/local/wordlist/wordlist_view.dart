@@ -7,6 +7,7 @@ import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
 import 'package:studieapp/utilities/dialogs/publish_dialog.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:studieapp/views/main/learning/local/wordlist/games/multiplechoice_view.dart';
 // import 'dart:developer' as devtools show log;
 
 class WordPair {
@@ -137,10 +138,14 @@ class _WordListViewState extends State<WordListView> {
         if (_editingIndex != null && _editingIndex! < _filteredWords.length) {
           // Edit existing word
           final originalIndex = _words.indexOf(_filteredWords[_editingIndex!]);
-          _words[originalIndex] = newPair;
+          setState(() {
+            _words[originalIndex] = newPair;
+          });
         } else {
           // Add new word
-          _words.add(newPair);
+          setState(() {
+            _words.add(newPair);
+          });
         }
 
         _updateFile();
@@ -338,7 +343,15 @@ class _WordListViewState extends State<WordListView> {
               _buildGameButton(
                 title: 'Multiple Choice',
                 icon: Icons.check_box_outlined,
-                onPressed: () {/* TODO: Navigate to Multiple Choice */},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          MultipleChoiceView(file: widget.file),
+                    ),
+                  );
+                },
               ),
               _buildGameButton(
                 title: 'Word Link',

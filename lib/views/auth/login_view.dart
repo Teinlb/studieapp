@@ -36,7 +36,7 @@ class _LoginViewState extends State<LoginView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Login'),
+        title: const Text('Log in'),
       ),
       body: Center(
         child: Padding(
@@ -46,7 +46,7 @@ class _LoginViewState extends State<LoginView> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Welcome Back!',
+                'Welkom Terug!',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge,
               ),
@@ -57,7 +57,7 @@ class _LoginViewState extends State<LoginView> {
                 autocorrect: false,
                 keyboardType: TextInputType.emailAddress,
                 decoration: const InputDecoration(
-                  hintText: 'Email Address',
+                  hintText: 'Email Adres',
                   prefixIcon: Icon(Icons.email),
                 ),
               ),
@@ -68,7 +68,7 @@ class _LoginViewState extends State<LoginView> {
                 enableSuggestions: false,
                 autocorrect: false,
                 decoration: const InputDecoration(
-                  hintText: 'Password',
+                  hintText: 'Wachtwoord',
                   prefixIcon: Icon(Icons.lock),
                 ),
               ),
@@ -97,16 +97,16 @@ class _LoginViewState extends State<LoginView> {
                   } on InvalidCredentialAuthException {
                     await showErrorDialog(
                       context,
-                      'Wrong credentials',
+                      'Inloggegevens onjuist',
                     );
                   } on GenericAuthException {
                     await showErrorDialog(
                       context,
-                      'Authentication error',
+                      'Authenticatie error',
                     );
                   }
                 },
-                child: const Text('Login'),
+                child: const Text('Log in'),
               ),
               const SizedBox(height: 20),
               TextButton(
@@ -116,7 +116,7 @@ class _LoginViewState extends State<LoginView> {
                     (route) => false,
                   );
                 },
-                child: const Text('Need an account? Register here!'),
+                child: const Text('Nog geen account? Registreer hier.'),
               ),
             ],
           ),
