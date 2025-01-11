@@ -107,7 +107,6 @@ class _LearningViewState extends State<LearningView> {
                   scrollDirection: Axis.horizontal,
                   itemCount: recentFiles.length,
                   itemBuilder: (context, index) {
-                    _loadRecentFiles();
                     return _buildRecentFileCard(recentFiles[index], theme);
                   },
                 ),
@@ -133,7 +132,6 @@ class _LearningViewState extends State<LearningView> {
               MaterialPageRoute(builder: (context) => SummaryView(file: file)),
             );
           }
-          await _loadRecentFiles();
         },
         child: Container(
           width: 160,

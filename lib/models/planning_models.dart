@@ -1,4 +1,5 @@
-import 'package:studieapp/services/local/local_constants.dart';
+// Models
+import 'package:studieapp/services/local/crud_constants.dart';
 
 class Task {
   final int id;

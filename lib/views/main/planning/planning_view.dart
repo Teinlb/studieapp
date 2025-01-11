@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/services/local/local_service.dart';
-import 'package:studieapp/services/local/subs/task_service.dart';
-import 'package:studieapp/services/local/subs/user_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/views/main/planning/deadlines/deadlines_tab.dart';
 import 'package:studieapp/utilities/dialogs/planning_dialog.dart';
@@ -19,8 +17,6 @@ class PlanningView extends StatefulWidget {
 class _PlanningViewState extends State<PlanningView>
     with SingleTickerProviderStateMixin {
   late final LocalService _localService;
-  late final UserService _userService;
-  late final TaskService _taskService;
 
   late TabController _tabController;
 
@@ -29,8 +25,6 @@ class _PlanningViewState extends State<PlanningView>
   @override
   void initState() {
     _localService = LocalService();
-    _userService = UserService();
-    _taskService = TaskService();
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
   }
@@ -55,6 +49,7 @@ class _PlanningViewState extends State<PlanningView>
               Tab(text: 'Taken'),
               Tab(text: 'Deadlines'),
               Tab(text: 'Projecten'),
+              // Tab(text: 'Rooster'),
             ],
             labelStyle: const TextStyle(fontFamily: 'Orbitron'),
             indicatorColor: AppTheme.accentOrange,
@@ -112,8 +107,8 @@ class _PlanningViewState extends State<PlanningView>
             onSubmit: () async {
               if (formKey.currentState?.validate() ?? false) {
                 final owner =
-                    await _userService.getOrCreateUser(email: userEmail);
-                _taskService.createTask(
+                    await _localService.getOrCreateUser(email: userEmail);
+                _localService.createTask(
                   owner: owner,
                   title: title,
                   dueDate: dueDate,
