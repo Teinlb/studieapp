@@ -1,4 +1,4 @@
-import 'package:studieapp/services/local/crud_constants.dart';
+import 'package:studieapp/services/local/local_constants.dart';
 
 class File {
   final int id;

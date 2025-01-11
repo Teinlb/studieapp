@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:studieapp/services/auth/auth_service.dart';
 import 'package:studieapp/constants/routes.dart';
-import 'package:studieapp/services/local/crud_constants.dart';
+import 'package:studieapp/services/local/local_constants.dart';
 import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/logout_dialog.dart';
