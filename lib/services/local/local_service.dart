@@ -28,11 +28,6 @@ class LocalService {
   }
   factory LocalService() => _shared;
 
-  late final StreamController<List<File>> _filesStreamController;
-  late final StreamController<List<Task>> _tasksStreamController;
-  late final StreamController<List<Deadline>> _deadlinesStreamController;
-  late final StreamController<List<Project>> _projectsStreamController;
-
   void _initStreams() {
     _filesStreamController = StreamController<List<File>>.broadcast(
       onListen: () {
@@ -55,6 +50,11 @@ class LocalService {
       },
     );
   }
+
+  late final StreamController<List<File>> _filesStreamController;
+  late final StreamController<List<Task>> _tasksStreamController;
+  late final StreamController<List<Deadline>> _deadlinesStreamController;
+  late final StreamController<List<Project>> _projectsStreamController;
 
   Stream<List<File>> get filesStream =>
       _filesStreamController.stream.filter((file) {
@@ -134,11 +134,6 @@ class LocalService {
     _tasksStreamController.add(_tasks);
   }
 
-  // Future<void> _cacheTags() async {
-  //   final allTags = await getAllTags();
-  //   _tags = allTags.toList();
-  // }
-
   Future<void> _cacheDeadlines() async {
     final allDeadlines = await getAllDeadlines();
     _deadlines = allDeadlines.toList();
@@ -151,44 +146,33 @@ class LocalService {
     _projectsStreamController.add(_projects);
   }
 
-  Future<Iterable<File>> getAllFiles() async {
+  Future<Iterable<T>> getAll<T>(
+      String tableName, T Function(Map<String, Object?>) fromRow) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final files = await db.query(fileTable);
+    final rows = await db.query(tableName);
 
-    return files.map((fileRow) => File.fromRow(fileRow));
+    return rows.map(fromRow);
+  }
+
+  Future<Iterable<File>> getAllFiles() async {
+    return getAll(fileTable, File.fromRow);
   }
 
   Future<Iterable<Task>> getAllTasks() async {
-    await _ensureDbIsOpen();
-    final db = _getDatabaseOrThrow();
-    final tasks = await db.query(taskTable);
-
-    return tasks.map((taskRow) => Task.fromRow(taskRow));
+    return getAll(taskTable, Task.fromRow);
   }
 
   Future<Iterable<Tag>> getAllTags() async {
-    await _ensureDbIsOpen();
-    final db = _getDatabaseOrThrow();
-    final tags = await db.query(tagsTable);
-
-    return tags.map((tagRow) => Tag.fromRow(tagRow));
+    return getAll(tagsTable, Tag.fromRow);
   }
 
   Future<Iterable<Deadline>> getAllDeadlines() async {
-    await _ensureDbIsOpen();
-    final db = _getDatabaseOrThrow();
-    final deadlines = await db.query(deadlineTable);
-
-    return deadlines.map((deadlineRow) => Deadline.fromRow(deadlineRow));
+    return getAll(deadlineTable, Deadline.fromRow);
   }
 
   Future<Iterable<Project>> getAllProjects() async {
-    await _ensureDbIsOpen();
-    final db = _getDatabaseOrThrow();
-    final projects = await db.query(projectTable);
-
-    return projects.map((projectRow) => Project.fromRow(projectRow));
+    return getAll(projectTable, Project.fromRow);
   }
 
   Future<File> getFile({required int id}) async {

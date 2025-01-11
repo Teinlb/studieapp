@@ -5,9 +5,11 @@ import 'package:studieapp/services/local/local_service.dart';
 import 'package:studieapp/theme/app_theme.dart';
 import 'package:studieapp/utilities/dialogs/delete_dialog.dart';
 import 'package:studieapp/utilities/dialogs/publish_dialog.dart';
+import 'package:studieapp/views/main/learning/local/wordlist/games/catchword_view.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/flashcards_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:studieapp/views/main/learning/local/wordlist/games/multiplechoice_view.dart';
+import 'package:studieapp/views/main/learning/local/wordlist/games/wordlink_view.dart';
 // import 'dart:developer' as devtools show log;
 
 class WordPair {
@@ -356,12 +358,26 @@ class _WordListViewState extends State<WordListView> {
               _buildGameButton(
                 title: 'Word Link',
                 icon: Icons.link_rounded,
-                onPressed: () {/* TODO: Navigate to Word Link */},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => WordLinkView(file: widget.file),
+                    ),
+                  );
+                },
               ),
               _buildGameButton(
                 title: 'Catch the Word',
                 icon: Icons.sports_esports_rounded,
-                onPressed: () {/* TODO: Navigate to Catch the Word */},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CatchTheWordView(file: widget.file),
+                    ),
+                  );
+                },
               ),
             ],
           ),
