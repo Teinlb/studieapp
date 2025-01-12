@@ -158,7 +158,11 @@ class LocalService {
   Future<Iterable<File>> getAllFiles() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final files = await db.query(fileTable);
+
+    late final List<Map<String, dynamic>> files;
+    await db.transaction((txn) async {
+      files = await txn.query(fileTable);
+    });
 
     return files.map((fileRow) => File.fromRow(fileRow));
   }
@@ -166,7 +170,11 @@ class LocalService {
   Future<Iterable<Task>> getAllTasks() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final tasks = await db.query(taskTable);
+
+    late final List<Map<String, dynamic>> tasks;
+    await db.transaction((txn) async {
+      tasks = await txn.query(taskTable);
+    });
 
     return tasks.map((taskRow) => Task.fromRow(taskRow));
   }
@@ -174,7 +182,11 @@ class LocalService {
   Future<Iterable<Deadline>> getAllDeadlines() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deadlines = await db.query(deadlineTable);
+
+    late final List<Map<String, dynamic>> deadlines;
+    await db.transaction((txn) async {
+      deadlines = await txn.query(deadlineTable);
+    });
 
     return deadlines.map((deadlineRow) => Deadline.fromRow(deadlineRow));
   }
@@ -182,7 +194,11 @@ class LocalService {
   Future<Iterable<Project>> getAllProjects() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final projects = await db.query(projectTable);
+
+    late final List<Map<String, dynamic>> projects;
+    await db.transaction((txn) async {
+      projects = await txn.query(projectTable);
+    });
 
     return projects.map((projectRow) => Project.fromRow(projectRow));
   }
@@ -195,27 +211,31 @@ class LocalService {
     final db = _getDatabaseOrThrow();
 
     // Haal het bestand op uit de database
-    final files = await db.query(
-      fileTable,
-      limit: 1,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    late final List<Map<String, dynamic>> files;
+    await db.transaction((txn) async {
+      files = await txn.query(
+        fileTable,
+        limit: 1,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (files.isEmpty) {
       throw CouldNotFindData();
     } else {
       // Update de laatst geopende tijd
       final now = DateTime.now();
-      await db.update(
-        fileTable,
-        {
-          lastOpenedColumn: now.toIso8601String(),
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-
+      await db.transaction((txn) async {
+        await txn.update(
+          fileTable,
+          {
+            lastOpenedColumn: now.toIso8601String(),
+          },
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      });
       // Maak een bestand van de database-rij
       final file = File.fromRow(files.first);
 
@@ -235,12 +255,16 @@ class LocalService {
   Future<Task> getTask({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final tasks = await db.query(
-      taskTable,
-      limit: 1,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final List<Map<String, dynamic>> tasks;
+    await db.transaction((txn) async {
+      tasks = await txn.query(
+        taskTable,
+        limit: 1,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (tasks.isEmpty) {
       throw CouldNotFindData();
@@ -256,12 +280,16 @@ class LocalService {
   Future<Deadline> getDeadline({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deadlines = await db.query(
-      deadlineTable,
-      limit: 1,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final List<Map<String, dynamic>> deadlines;
+    await db.transaction((txn) async {
+      deadlines = await txn.query(
+        deadlineTable,
+        limit: 1,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (deadlines.isEmpty) {
       throw CouldNotFindData();
@@ -277,12 +305,16 @@ class LocalService {
   Future<Project> getProject({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final projects = await db.query(
-      projectTable,
-      limit: 1,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final List<Map<String, dynamic>> projects;
+    await db.transaction((txn) async {
+      projects = await txn.query(
+        projectTable,
+        limit: 1,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (projects.isEmpty) {
       throw CouldNotFindData();
@@ -309,14 +341,17 @@ class LocalService {
     await getFile(id: id);
 
     // update DB
-    final updatesCount = await db.update(
-      fileTable,
-      {
-        contentColumn: content,
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    late final int updatesCount;
+    await db.transaction((txn) async {
+      updatesCount = await txn.update(
+        fileTable,
+        {
+          contentColumn: content,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (updatesCount == 0) {
       throw CouldNotUpdateData();
@@ -340,14 +375,17 @@ class LocalService {
     await getFile(id: id);
 
     // update DB
-    final updatesCount = await db.update(
-      fileTable,
-      {
-        cloudIdColumn: cloudId,
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    late final int updatesCount;
+    await db.transaction((txn) async {
+      updatesCount = await txn.update(
+        fileTable,
+        {
+          cloudIdColumn: cloudId,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (updatesCount == 0) {
       throw CouldNotUpdateData();
@@ -371,14 +409,17 @@ class LocalService {
     await getTask(id: id);
 
     // update DB
-    final updatesCount = await db.update(
-      taskTable,
-      {
-        isCompletedColumn: isCompleted,
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    late final int updatesCount;
+    await db.transaction((txn) async {
+      updatesCount = await txn.update(
+        taskTable,
+        {
+          isCompletedColumn: isCompleted,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (updatesCount == 0) {
       throw CouldNotUpdateData();
@@ -407,16 +448,19 @@ class LocalService {
     final String endDateString = endDate.toIso8601String();
 
     // update DB
-    final updatesCount = await db.update(
-      projectTable,
-      {
-        titleColumn: title,
-        startDateColumn: startDateString,
-        endDateColumn: endDateString,
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    late final int updatesCount;
+    await db.transaction((txn) async {
+      updatesCount = await txn.update(
+        projectTable,
+        {
+          titleColumn: title,
+          startDateColumn: startDateString,
+          endDateColumn: endDateString,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
 
     if (updatesCount == 0) {
       throw CouldNotUpdateData();
@@ -435,7 +479,12 @@ class LocalService {
   Future<int> deleteAllFiles() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(fileTable);
+
+    late final int numberOfDeletions;
+    await db.transaction((txn) async {
+      numberOfDeletions = await txn.delete(fileTable);
+    });
+
     _files = [];
     _filesStreamController.add(_files);
     return numberOfDeletions;
@@ -444,7 +493,12 @@ class LocalService {
   Future<int> deleteAllTasks() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(taskTable);
+
+    late final int numberOfDeletions;
+    await db.transaction((txn) async {
+      numberOfDeletions = await txn.delete(taskTable);
+    });
+
     _tasks = [];
     _tasksStreamController.add(_tasks);
     return numberOfDeletions;
@@ -453,7 +507,12 @@ class LocalService {
   Future<int> deleteAllDeadlines() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(deadlineTable);
+
+    late final int numberOfDeletions;
+    await db.transaction((txn) async {
+      numberOfDeletions = await txn.delete(deadlineTable);
+    });
+
     _deadlines = [];
     _deadlinesStreamController.add(_deadlines);
     return numberOfDeletions;
@@ -462,7 +521,12 @@ class LocalService {
   Future<int> deleteAllProjects() async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final numberOfDeletions = await db.delete(projectTable);
+
+    late final int numberOfDeletions;
+    await db.transaction((txn) async {
+      numberOfDeletions = await txn.delete(projectTable);
+    });
+
     _projects = [];
     _projectsStreamController.add(_projects);
     return numberOfDeletions;
@@ -474,11 +538,16 @@ class LocalService {
   Future<void> deleteFile({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deletedCount = await db.delete(
-      fileTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final int deletedCount;
+    await db.transaction((txn) async {
+      deletedCount = await txn.delete(
+        fileTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
     if (deletedCount == 0) {
       throw CouldNotDeleteData();
     } else {
@@ -490,11 +559,16 @@ class LocalService {
   Future<void> deleteTask({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deletedCount = await db.delete(
-      taskTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final int deletedCount;
+    await db.transaction((txn) async {
+      deletedCount = await txn.delete(
+        taskTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
     if (deletedCount == 0) {
       throw CouldNotDeleteData();
     } else {
@@ -506,11 +580,16 @@ class LocalService {
   Future<void> deleteDeadline({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deletedCount = await db.delete(
-      deadlineTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final int deletedCount;
+    await db.transaction((txn) async {
+      deletedCount = await txn.delete(
+        deadlineTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
     if (deletedCount == 0) {
       throw CouldNotDeleteData();
     } else {
@@ -522,11 +601,16 @@ class LocalService {
   Future<void> deleteProject({required int id}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deletedCount = await db.delete(
-      projectTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+
+    late final int deletedCount;
+    await db.transaction((txn) async {
+      deletedCount = await txn.delete(
+        projectTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
     if (deletedCount == 0) {
       throw CouldNotDeleteData();
     } else {
@@ -558,14 +642,17 @@ class LocalService {
     final lastOpened = DateTime.now();
 
     // create the file
-    final fileId = await db.insert(fileTable, {
-      userIdColumn: owner.id,
-      titleColumn: title,
-      subjectColumn: subject,
-      descriptionColumn: description,
-      contentColumn: content,
-      typeColumn: type,
-      lastOpenedColumn: lastOpened.toIso8601String(),
+    late final int fileId;
+    await db.transaction((txn) async {
+      fileId = await txn.insert(fileTable, {
+        userIdColumn: owner.id,
+        titleColumn: title,
+        subjectColumn: subject,
+        descriptionColumn: description,
+        contentColumn: content,
+        typeColumn: type,
+        lastOpenedColumn: lastOpened.toIso8601String(),
+      });
     });
 
     final file = File(
@@ -603,11 +690,14 @@ class LocalService {
     final String dueDateString = dueDate!.toIso8601String();
 
     // create the task
-    final taskId = await db.insert(taskTable, {
-      userIdColumn: owner.id,
-      titleColumn: title,
-      dueDateColumn: dueDateString,
-      isCompletedColumn: isCompleted ? 1 : 0,
+    late final int taskId;
+    await db.transaction((txn) async {
+      taskId = await txn.insert(taskTable, {
+        userIdColumn: owner.id,
+        titleColumn: title,
+        dueDateColumn: dueDateString,
+        isCompletedColumn: isCompleted ? 1 : 0,
+      });
     });
 
     final task = Task(
@@ -641,10 +731,13 @@ class LocalService {
     final String dateString = date.toIso8601String();
 
     // create the deadline
-    final deadlineId = await db.insert(deadlineTable, {
-      userIdColumn: owner.id,
-      titleColumn: title,
-      dateColumn: dateString,
+    late final int deadlineId;
+    await db.transaction((txn) async {
+      deadlineId = await txn.insert(deadlineTable, {
+        userIdColumn: owner.id,
+        titleColumn: title,
+        dateColumn: dateString,
+      });
     });
 
     final deadline = Deadline(
@@ -679,11 +772,14 @@ class LocalService {
     final String endDateString = endDate.toIso8601String();
 
     // create the project
-    final projectId = await db.insert(projectTable, {
-      userIdColumn: owner.id,
-      titleColumn: title,
-      startDateColumn: startDateString,
-      endDateColumn: endDateString,
+    late final int projectId;
+    await db.transaction((txn) async {
+      projectId = await txn.insert(projectTable, {
+        userIdColumn: owner.id,
+        titleColumn: title,
+        startDateColumn: startDateString,
+        endDateColumn: endDateString,
+      });
     });
 
     final project = Project(
@@ -707,12 +803,15 @@ class LocalService {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
-    final results = await db.query(
-      userTable,
-      limit: 1,
-      where: 'email = ?',
-      whereArgs: [email.toLowerCase()],
-    );
+    late final List<Map<String, dynamic>> results;
+    await db.transaction((txn) async {
+      results = await txn.query(
+        userTable,
+        limit: 1,
+        where: 'email = ?',
+        whereArgs: [email.toLowerCase()],
+      );
+    });
 
     if (results.isEmpty) {
       throw CouldNotFindUser();
@@ -734,26 +833,31 @@ class LocalService {
     final firebaseUserId = firebaseUser.id;
 
     // Controleer of de gebruiker al in de SQLite-tabel bestaat
-    final results = await db.query(
-      userTable,
-      limit: 1,
-      where: '$idColumn = ?',
-      whereArgs: [firebaseUserId],
-    );
+    late final List<Map<String, dynamic>> results;
+    await db.transaction((txn) async {
+      results = await txn.query(
+        userTable,
+        limit: 1,
+        where: '$idColumn = ?',
+        whereArgs: [firebaseUserId],
+      );
+    });
 
     if (results.isNotEmpty) {
       throw UserAlreadyExists(); // Definieer deze fout indien nodig
     }
 
     // Voeg de gebruiker toe aan de SQLite-tabel
-    await db.insert(userTable, {
-      idColumn: firebaseUserId,
-      emailColumn: email.toLowerCase(),
-      usernameColumn: 'anonymous',
-      experienceColumn: 0,
-      openTimeColumn: DateTime.now().toIso8601String(),
-      streakColumn: 0,
-      sessionsColumn: 0,
+    await db.transaction((txn) async {
+      await txn.insert(userTable, {
+        idColumn: firebaseUserId,
+        emailColumn: email.toLowerCase(),
+        usernameColumn: 'anonymous',
+        experienceColumn: 0,
+        openTimeColumn: DateTime.now().toIso8601String(),
+        streakColumn: 0,
+        sessionsColumn: 0,
+      });
     });
 
     return DatabaseUser(
@@ -765,26 +869,33 @@ class LocalService {
   Future<void> deleteUser({required String email}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
-    final deletedCount = await db.delete(
-      userTable,
-      where: 'email = ?',
-      whereArgs: [email.toLowerCase()],
-    );
-    if (deletedCount != 1) {
-      throw CouldNotDeleteUser();
-    }
+
+    late final int deletedCount;
+    await db.transaction((txn) async {
+      deletedCount = await txn.delete(
+        userTable,
+        where: 'email = ?',
+        whereArgs: [email.toLowerCase()],
+      );
+      if (deletedCount != 1) {
+        throw CouldNotDeleteUser();
+      }
+    });
   }
 
   Future<Map<String, dynamic>> fetchUserData({required String userId}) async {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
-    final user = await db.query(
-      userTable,
-      where: '$idColumn = ?',
-      whereArgs: [userId],
-      limit: 1,
-    );
+    late final List<Map<String, dynamic>> user;
+    await db.transaction((txn) async {
+      user = await txn.query(
+        userTable,
+        where: '$idColumn = ?',
+        whereArgs: [userId],
+        limit: 1,
+      );
+    });
 
     return user.first;
   }
@@ -793,25 +904,29 @@ class LocalService {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
-    final user = await db.query(
-      userTable,
-      where: '$idColumn = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
+    late final List<Map<String, dynamic>> user;
+    await db.transaction((txn) async {
+      user = await txn.query(
+        userTable,
+        where: '$idColumn = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+    });
 
     if (user.isEmpty) {
       throw Exception('User not found');
     }
-
-    await db.update(
-      userTable,
-      {
-        usernameColumn: username,
-      },
-      where: '$idColumn = ?',
-      whereArgs: [id],
-    );
+    await db.transaction((txn) async {
+      await txn.update(
+        userTable,
+        {
+          usernameColumn: username,
+        },
+        where: '$idColumn = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   //
@@ -821,12 +936,15 @@ class LocalService {
     await _ensureDbIsOpen();
     final db = _getDatabaseOrThrow();
 
-    final user = await db.query(
-      userTable,
-      where: '$idColumn = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
+    late final List<Map<String, dynamic>> user;
+    await db.transaction((txn) async {
+      user = await txn.query(
+        userTable,
+        where: '$idColumn = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+    });
 
     if (user.isEmpty) {
       throw Exception('User not found');
@@ -855,16 +973,18 @@ class LocalService {
     final updatedXP = currentXP + addedXP;
 
     // Werk de gebruiker bij in de database
-    await db.update(
-      userTable,
-      {
-        experienceColumn: updatedXP,
-        streakColumn: updatedStreak,
-        openTimeColumn: now.toIso8601String(),
-      },
-      where: '$idColumn = ?',
-      whereArgs: [id],
-    );
+    await db.transaction((txn) async {
+      await txn.update(
+        userTable,
+        {
+          experienceColumn: updatedXP,
+          streakColumn: updatedStreak,
+          openTimeColumn: now.toIso8601String(),
+        },
+        where: '$idColumn = ?',
+        whereArgs: [id],
+      );
+    });
   }
 
   //
@@ -927,6 +1047,9 @@ class LocalService {
   }
 }
 
+//
+
+// class for database user
 @immutable
 class DatabaseUser {
   final String id;

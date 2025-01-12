@@ -44,12 +44,10 @@ class _PlanningViewState extends State<PlanningView>
           color: AppTheme.secondaryBlue,
           child: TabBar(
             controller: _tabController,
-            isScrollable: true,
             tabs: const [
               Tab(text: 'Taken'),
               Tab(text: 'Deadlines'),
               Tab(text: 'Projecten'),
-              // Tab(text: 'Rooster'),
             ],
             labelStyle: const TextStyle(fontFamily: 'Orbitron'),
             indicatorColor: AppTheme.accentOrange,
@@ -244,7 +242,7 @@ class _PlanningViewState extends State<PlanningView>
                 runSpacing: 16,
                 children: [
                   SizedBox(
-                    width: MediaQuery.of(context).size.width / 2 - 32,
+                    width: MediaQuery.of(context).size.width / 2,
                     child: DatePickerField(
                       label: 'Start',
                       selectedDate: startDate,
@@ -259,15 +257,11 @@ class _PlanningViewState extends State<PlanningView>
                     ),
                   ),
                   SizedBox(
-                    width: MediaQuery.of(context).size.width / 2 - 32,
+                    width: MediaQuery.of(context).size.width / 2,
                     child: DatePickerField(
                       label: 'Eind',
                       selectedDate: endDate,
-                      firstDate: startDate ?? DateTime.now(),
                       onDateSelected: (date) => setState(() => endDate = date),
-                      hintText: startDate == null
-                          ? 'Kies eerst startdatum'
-                          : 'Kies einddatum',
                     ),
                   ),
                 ],

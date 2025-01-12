@@ -34,8 +34,8 @@ class _ProjectsViewState extends State<ProjectsTab> {
               builder: (context, snapshot) {
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return buildEmptyState(
-                    'Nog geen taken',
-                    'Voeg taken toe om te beginnen',
+                    'Nog geen projecten',
+                    'Voeg projecten toe om te beginnen',
                   );
                 } else {
                   switch (snapshot.connectionState) {

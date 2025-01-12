@@ -46,74 +46,78 @@ class ProjectsListView extends StatelessWidget {
 
         return Card(
           margin: const EdgeInsets.only(bottom: 16.0),
-          child: ExpansionTile(
-            tilePadding:
-                const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-            title: Text(
-              project.title,
-              style: AppTheme.getOrbitronStyle(
-                size: 18,
-                weight: FontWeight.bold,
-              ),
+          elevation: 0,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+          ),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent, // Verwijder de witte lijn
+              splashColor:
+                  Colors.transparent, // Voorkom kleurflits bij interactie
             ),
-            subtitle: Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today,
-                  size: 14,
-                  color: AppTheme.textTertiary,
+            child: ExpansionTile(
+              tilePadding:
+                  const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+              collapsedBackgroundColor: Colors.transparent,
+              backgroundColor:
+                  Colors.transparent, // Zorg voor een consistente achtergrond
+              title: Text(
+                project.title,
+                style: AppTheme.getOrbitronStyle(
+                  size: 18,
+                  weight: FontWeight.bold,
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${_formatDate(project.startDate)} - ${_formatDate(project.endDate)}',
+              ),
+              subtitle: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: AppTheme.textTertiary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_formatDate(project.startDate)} - ${_formatDate(project.endDate)}',
+                    style: AppTheme.getOrbitronStyle(
+                      size: 12,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: progressColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  border: Border.all(color: progressColor, width: 1),
+                ),
+                child: Text(
+                  '$daysLeft dagen',
                   style: AppTheme.getOrbitronStyle(
                     size: 12,
-                    color: AppTheme.textTertiary,
+                    color: progressColor,
+                    weight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 16.0),
+                  child: TextButton.icon(
+                    onPressed: () => onDeleteProject(project),
+                    icon: const Icon(Icons.delete_outline),
+                    label: const Text('Verwijderen'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.errorRed,
+                    ),
                   ),
                 ),
               ],
             ),
-            trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: progressColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                border: Border.all(color: progressColor, width: 1),
-              ),
-              child: Text(
-                '$daysLeft dagen',
-                style: AppTheme.getOrbitronStyle(
-                  size: 12,
-                  color: progressColor,
-                  weight: FontWeight.bold,
-                ),
-              ),
-            ),
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        // Implementeer edit functionaliteit
-                      },
-                      icon: const Icon(Icons.edit),
-                      label: const Text('Bewerken'),
-                    ),
-                    TextButton.icon(
-                      onPressed: () => onDeleteProject(project),
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Verwijderen'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppTheme.errorRed,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ),
         );
       },
