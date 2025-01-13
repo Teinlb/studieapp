@@ -16,12 +16,15 @@ class PublishFileListView extends StatefulWidget {
 class _PublishFileListViewState extends State<PublishFileListView> {
   late final LocalService _localService;
   late final FirebaseCloudStorage _cloudService;
+
   String get userId => AuthService.firebase().currentUser!.id;
   String get userEmail => AuthService.firebase().currentUser!.email;
 
   List<File> _files = [];
   List<File> _filteredFiles = [];
+
   bool _isLoading = true;
+
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -33,17 +36,13 @@ class _PublishFileListViewState extends State<PublishFileListView> {
   }
 
   Future<void> _fetchFiles() async {
-    setState(() {
-      _isLoading = true;
-    });
     try {
       final fetchedFiles = await _localService.getAllFiles();
       setState(() {
         _files = fetchedFiles.toList();
         _filteredFiles = _files;
+        _isLoading = true;
       });
-    } catch (e) {
-      print('Error fetching files: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -66,7 +65,7 @@ class _PublishFileListViewState extends State<PublishFileListView> {
       _cloudService.uploadOrUpdateFile(file: file);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Woordenlijst gepubliceerd'),
+          content: Text('Bestand gepubliceerd'),
         ),
       );
     }
@@ -103,69 +102,78 @@ class _PublishFileListViewState extends State<PublishFileListView> {
                 ),
               ),
               Expanded(
-                child: _filteredFiles.isEmpty
-                    ? const Center(child: Text('Geen bestanden gevonden'))
-                    : ListView.builder(
-                        itemCount: _filteredFiles.length,
-                        itemBuilder: (context, index) {
-                          final file = _filteredFiles[index];
-                          return InkWell(
-                            onTap: () {
-                              _publishFile(file);
-                            },
-                            child: Card(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 8, horizontal: 16),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            file.title,
-                                            style: AppTheme
-                                                .theme.textTheme.titleLarge,
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _filteredFiles.isEmpty
+                        ? const Center(child: Text('Geen bestanden gevonden'))
+                        : ListView.builder(
+                            itemCount: _filteredFiles.length,
+                            itemBuilder: (context, index) {
+                              final file = _filteredFiles[index];
+                              return InkWell(
+                                onTap: () {
+                                  _publishFile(file);
+                                },
+                                child: Card(
+                                  margin: const EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 16),
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        // Bestandsinformatie
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                file.title,
+                                                style: AppTheme
+                                                    .theme.textTheme.titleLarge
+                                                    ?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                file.subject,
+                                                style: AppTheme
+                                                    .theme.textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                  color: Colors.grey[600],
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            file.subject,
-                                            style: AppTheme
-                                                .theme.textTheme.bodyLarge,
+                                        ),
+                                        // Publiceren-icoon
+                                        IconButton(
+                                          onPressed: () {
+                                            _publishFile(file);
+                                          },
+                                          icon: const Icon(
+                                            Icons.cloud_upload_outlined,
+                                            color: Colors.blue,
                                           ),
-                                        ],
-                                      ),
+                                          tooltip: 'Publiceer dit bestand',
+                                        ),
+                                      ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
               ),
             ],
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.7), // Minder transparant
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white, // Achtergrondkleur voor contrast
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const CircularProgressIndicator(
-                    color: Colors.blue,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

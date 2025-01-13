@@ -17,7 +17,7 @@ class _PublishedFileListViewState extends State<PublishedFileListView> {
   String get userEmail => AuthService.firebase().currentUser!.email;
 
   List<File> _files = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -32,13 +32,12 @@ class _PublishedFileListViewState extends State<PublishedFileListView> {
       final fetchedFiles = await _localService.getAllFiles();
       setState(() {
         _files = fetchedFiles.where((file) => file.cloudId != null).toList();
-        _isLoading = false;
+        _isLoading = true;
       });
-    } catch (e) {
+    } finally {
       setState(() {
         _isLoading = false;
       });
-      print('Error fetching files: $e');
     }
   }
 

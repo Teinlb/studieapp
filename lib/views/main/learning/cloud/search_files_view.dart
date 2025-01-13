@@ -4,7 +4,7 @@ import 'package:studieapp/services/cloud/firebase_cloud_storage.dart';
 import 'package:studieapp/theme/app_theme.dart';
 
 class SearchFilesView extends StatefulWidget {
-  const SearchFilesView({Key? key}) : super(key: key);
+  const SearchFilesView({super.key});
 
   @override
   State<SearchFilesView> createState() => _SearchFilesViewState();
@@ -12,16 +12,21 @@ class SearchFilesView extends StatefulWidget {
 
 class _SearchFilesViewState extends State<SearchFilesView> {
   List<CloudFile> _files = [];
-  String? _searchQuery;
   String? selectedSubject;
   String? selectedFileType;
 
   final List<String> subjects = [
-    'Wiskunde',
-    'Natuurkunde',
+    'Engels',
+    'Frans',
+    'Duits',
     'Biologie',
     'Scheikunde',
+    'Geschiedenis',
+    'Aardrijkskunde',
+    'Natuurkunde',
+    'Wiskunde',
   ];
+
   final List<String> fileTypes = ['Samenvatting', 'Woordenlijst'];
 
   void _fetchFiles() async {
@@ -33,7 +38,6 @@ class _SearchFilesViewState extends State<SearchFilesView> {
           : (selectedFileType == 'Samenvatting' ? 'summary' : 'wordlist');
 
       final files = await cloudStorage.fetchFilteredFiles(
-        title: _searchQuery?.isNotEmpty == true ? _searchQuery : null,
         subject: selectedSubject,
         fileType: fileType,
       );
@@ -42,8 +46,6 @@ class _SearchFilesViewState extends State<SearchFilesView> {
         _files = files;
       });
     } catch (e) {
-      // Foutmelding loggen en gebruikersfeedback geven
-      print('Error fetching files: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fout bij ophalen bestanden')),
       );
@@ -115,20 +117,6 @@ class _SearchFilesViewState extends State<SearchFilesView> {
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 16),
-            // Zoekbalk
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Zoek op naam',
-                prefixIcon: Icon(Icons.search, color: AppTheme.accentOrange),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-                _fetchFiles(); // Update bestanden na zoekopdracht
-              },
             ),
             const SizedBox(height: 16),
             // Resultaten

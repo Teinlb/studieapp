@@ -31,6 +31,12 @@ class AppTheme {
       onError: textPrimary,
     ),
     scaffoldBackgroundColor: primaryDark,
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: accentOrange,
+      circularTrackColor: secondaryBlue,
+      linearTrackColor: tertiaryBlue,
+      refreshBackgroundColor: primaryDark,
+    ),
     textTheme: TextTheme(
       displayLarge: _getRobotoStyle(size: 32, weight: FontWeight.bold),
       displayMedium: _getRobotoStyle(size: 28, weight: FontWeight.bold),

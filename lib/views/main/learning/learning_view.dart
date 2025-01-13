@@ -124,12 +124,13 @@ class _LearningViewState extends State<LearningView> {
           if (file.type == 'wordlist') {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => WordListView(file: file)),
+              MaterialPageRoute(
+                  builder: (context) => WordListView(id: file.id)),
             );
           } else {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => SummaryView(file: file)),
+              MaterialPageRoute(builder: (context) => SummaryView(id: file.id)),
             );
           }
         },

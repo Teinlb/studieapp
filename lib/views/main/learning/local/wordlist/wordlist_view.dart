@@ -35,11 +35,11 @@ class WordPair {
 }
 
 class WordListView extends StatefulWidget {
-  final File file;
+  final int id;
 
   const WordListView({
     super.key,
-    required this.file,
+    required this.id,
   });
 
   @override
@@ -49,40 +49,59 @@ class WordListView extends StatefulWidget {
 class _WordListViewState extends State<WordListView> {
   late final LocalService _localService;
   late final FirebaseCloudStorage _cloudService;
+
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _wordController = TextEditingController();
   final TextEditingController _translationController = TextEditingController();
+
   late List<WordPair> _words;
   late List<WordPair> _filteredWords;
+
+  late File _file;
+
   bool _isEditing = false;
+  bool _isLoading = true;
+
   int? _editingIndex;
 
   @override
   void initState() {
-    _words = WordPair.fromFileContent(widget.file.content);
-    _filteredWords = List.from(_words);
-    final updatedFile = widget.file.copyWith(
+    super.initState();
+    _initializeData();
+  }
+
+  void _initializeData() async {
+    _localService = LocalService();
+    _cloudService = FirebaseCloudStorage();
+
+    _file = await _localService.getFile(id: widget.id);
+    _file = _file.copyWith(
       lastOpened: DateTime.now(),
     );
-    _localService = LocalService();
-    _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
-    _cloudService = FirebaseCloudStorage();
-    super.initState();
+    _localService.updateFile(id: widget.id, content: _file.content);
+
+    _words = WordPair.fromFileContent(_file.content);
+    _filteredWords = List.from(_words);
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   void _updateFile() {
-    final updatedFile = widget.file.copyWith(
-      content: WordPair.toFileContent(_words),
-    );
-    _localService.updateFile(id: updatedFile.id, content: updatedFile.content);
+    setState(() {
+      _file = _file.copyWith(
+        content: WordPair.toFileContent(_words),
+      );
+    });
+    _localService.updateFile(id: _file.id, content: _file.content);
   }
 
   void _deleteFile() async {
     final shouldDelete = await showDeleteDialog(context);
     if (shouldDelete) {
-      _localService.deleteFile(id: widget.file.id);
+      _localService.deleteFile(id: _file.id);
 
-      // Navigeer terug naar het vorige scherm
       Navigator.of(context).pop();
     }
   }
@@ -90,12 +109,10 @@ class _WordListViewState extends State<WordListView> {
   void _publishFile() async {
     final shouldPublish = await showPublishDialog(context);
     if (shouldPublish) {
-      final updatedFile = widget.file.copyWith(
-        content: WordPair.toFileContent(
-            _words), // Gebruik de bijgewerkte woordenlijst
+      _file = _file.copyWith(
+        content: WordPair.toFileContent(_words),
       );
-      _cloudService.uploadOrUpdateFile(
-          file: updatedFile); // Gebruik de geüpdatete file
+      _cloudService.uploadOrUpdateFile(file: _file);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Woordenlijst gepubliceerd'),
@@ -292,243 +309,260 @@ class _WordListViewState extends State<WordListView> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Details Card
-          Card(
-            color: AppTheme.secondaryBlue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
-            ),
-            elevation: 4,
-            child: Padding(
+      body: _isLoading
+          ? FutureBuilder(
+              future: Future.delayed(const Duration(milliseconds: 500), () {}),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                return Container();
+              },
+            )
+          : ListView(
               padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.file.title, style: textTheme.titleLarge),
-                  const SizedBox(height: 8),
-                  Text(widget.file.subject, style: textTheme.bodyLarge),
-                  if (widget.file.description.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.file.description,
-                      style: textTheme.bodyMedium,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Game Buttons Grid
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1,
-            children: [
-              _buildGameButton(
-                title: 'Flashcards',
-                icon: Icons.menu_book_rounded,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => FlashcardsView(file: widget.file),
-                    ),
-                  );
-                },
-              ),
-              _buildGameButton(
-                title: 'Multiple Choice',
-                icon: Icons.check_box_outlined,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          MultipleChoiceView(file: widget.file),
-                    ),
-                  );
-                },
-              ),
-              _buildGameButton(
-                title: 'Word Link',
-                icon: Icons.link_rounded,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => WordLinkView(file: widget.file),
-                    ),
-                  );
-                },
-              ),
-              _buildGameButton(
-                title: 'Catch the Word',
-                icon: Icons.sports_esports_rounded,
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CatchTheWordView(file: widget.file),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Search Bar
-          TextField(
-            controller: _searchController,
-            onChanged: _filterWords,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: AppTheme.secondaryBlue,
-              hintText: 'Zoek woorden...',
-              hintStyle: textTheme.bodyMedium,
-              prefixIcon:
-                  const Icon(Icons.search, color: AppTheme.accentOrange),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear,
-                          color: AppTheme.textSecondary),
-                      onPressed: () {
-                        _searchController.clear();
-                        _filterWords('');
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Words List
-          Card(
-            color: AppTheme.secondaryBlue,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
-            ),
-            elevation: 4,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Woorden', style: textTheme.displayMedium),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline,
-                            color: AppTheme.accentOrange),
-                        onPressed: () => _startEditing(_filteredWords.length),
-                      ),
-                    ],
+              children: [
+                // Details Card
+                Card(
+                  color: AppTheme.secondaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.largeBorderRadius),
                   ),
-                  if (_isEditing)
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _wordController,
-                              decoration: InputDecoration(
-                                hintText: 'Woord',
-                                filled: true,
-                                fillColor:
-                                    AppTheme.secondaryBlue.withOpacity(0.5),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      AppTheme.borderRadius),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              controller: _translationController,
-                              decoration: InputDecoration(
-                                hintText: 'Vertaling',
-                                filled: true,
-                                fillColor:
-                                    AppTheme.secondaryBlue.withOpacity(0.5),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      AppTheme.borderRadius),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.save, color: Colors.green),
-                            onPressed: _saveEdit,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.cancel, color: Colors.red),
-                            onPressed: _cancelEdit,
-                          ),
-                        ],
-                      ),
-                    ),
-                  const SizedBox(height: 16),
-                  _filteredWords.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Geen woorden gevonden',
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_file.title, style: textTheme.titleLarge),
+                        const SizedBox(height: 8),
+                        Text(_file.subject, style: textTheme.bodyLarge),
+                        if (_file.description.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _file.description,
                             style: textTheme.bodyMedium,
                           ),
-                        )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _filteredWords.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(color: AppTheme.textSecondary),
-                          itemBuilder: (context, index) {
-                            final pair = _filteredWords[index];
-                            return ListTile(
-                              title:
-                                  Text(pair.word, style: textTheme.bodyLarge),
-                              subtitle: Text(pair.translation,
-                                  style: textTheme.bodyMedium),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: AppTheme.accentOrange),
-                                    onPressed: () => _startEditing(index),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: AppTheme.errorRed),
-                                    onPressed: () => _deleteWord(index),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Game Buttons Grid
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: 1,
+                  children: [
+                    _buildGameButton(
+                      title: 'Flashcards',
+                      icon: Icons.menu_book_rounded,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FlashcardsView(file: _file),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildGameButton(
+                      title: 'Multiple Choice',
+                      icon: Icons.check_box_outlined,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                MultipleChoiceView(file: _file),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildGameButton(
+                      title: 'Word Link',
+                      icon: Icons.link_rounded,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WordLinkView(file: _file),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildGameButton(
+                      title: 'Catch the Word',
+                      icon: Icons.sports_esports_rounded,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CatchTheWordView(file: _file),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Search Bar
+                TextField(
+                  controller: _searchController,
+                  onChanged: _filterWords,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: AppTheme.secondaryBlue,
+                    hintText: 'Zoek woorden...',
+                    hintStyle: textTheme.bodyMedium,
+                    prefixIcon:
+                        const Icon(Icons.search, color: AppTheme.accentOrange),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear,
+                                color: AppTheme.textSecondary),
+                            onPressed: () {
+                              _searchController.clear();
+                              _filterWords('');
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(AppTheme.borderRadius),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Words List
+                Card(
+                  color: AppTheme.secondaryBlue,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(AppTheme.largeBorderRadius),
+                  ),
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Woorden', style: textTheme.displayMedium),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle_outline,
+                                  color: AppTheme.accentOrange),
+                              onPressed: () =>
+                                  _startEditing(_filteredWords.length),
+                            ),
+                          ],
                         ),
-                ],
-              ),
+                        if (_isEditing)
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _wordController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Woord',
+                                      filled: true,
+                                      fillColor: AppTheme.secondaryBlue
+                                          .withOpacity(0.5),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            AppTheme.borderRadius),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _translationController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Vertaling',
+                                      filled: true,
+                                      fillColor: AppTheme.secondaryBlue
+                                          .withOpacity(0.5),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(
+                                            AppTheme.borderRadius),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.save,
+                                      color: Colors.green),
+                                  onPressed: _saveEdit,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.cancel,
+                                      color: Colors.red),
+                                  onPressed: _cancelEdit,
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        _filteredWords.isEmpty
+                            ? Center(
+                                child: Text(
+                                  'Geen woorden gevonden',
+                                  style: textTheme.bodyMedium,
+                                ),
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _filteredWords.length,
+                                separatorBuilder: (context, index) =>
+                                    const Divider(
+                                        color: AppTheme.textSecondary),
+                                itemBuilder: (context, index) {
+                                  final pair = _filteredWords[index];
+                                  return ListTile(
+                                    title: Text(pair.word,
+                                        style: textTheme.bodyLarge),
+                                    subtitle: Text(pair.translation,
+                                        style: textTheme.bodyMedium),
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.edit,
+                                              color: AppTheme.accentOrange),
+                                          onPressed: () => _startEditing(index),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.delete,
+                                              color: AppTheme.errorRed),
+                                          onPressed: () => _deleteWord(index),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -26,7 +26,7 @@ class PlanningDialog extends StatelessWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.largeBorderRadius),
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
       ),
       child: Container(
         padding: const EdgeInsets.all(24.0),
@@ -129,10 +129,6 @@ class DatePickerField extends StatelessWidget {
           children: [
             Text(
               label,
-              style: AppTheme.getOrbitronStyle(
-                size: 14,
-                color: AppTheme.textTertiary,
-              ),
             ),
             const SizedBox(height: 8),
             Row(
@@ -147,7 +143,6 @@ class DatePickerField extends StatelessWidget {
                   selectedDate != null
                       ? DateFormat('dd/MM/yyyy').format(selectedDate!)
                       : hintText,
-                  style: AppTheme.getOrbitronStyle(size: 14),
                 ),
               ],
             ),

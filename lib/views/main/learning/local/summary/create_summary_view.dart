@@ -70,12 +70,6 @@ class _CreateSummaryViewState extends State<CreateSummaryView> {
         ),
         backgroundColor: AppTheme.secondaryBlue,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveSummary,
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -131,11 +125,16 @@ class _CreateSummaryViewState extends State<CreateSummaryView> {
                     DropdownButtonFormField<String>(
                       value: _selectedSubject,
                       items: [
-                        'Wiskunde',
-                        'Natuurkunde',
+                        'Engels',
+                        'Frans',
+                        'Duits',
+                        'Biologie',
+                        'Scheikunde',
                         'Geschiedenis',
-                        'Literatuur',
-                        'Overig'
+                        'Aardrijkskunde',
+                        'Natuurkunde',
+                        'Wiskunde',
+                        'Overig',
                       ]
                           .map((subject) => DropdownMenuItem(
                                 value: subject,
@@ -265,6 +264,12 @@ class _CreateSummaryViewState extends State<CreateSummaryView> {
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _saveSummary,
+              icon: const Icon(Icons.save),
+              label: const Text('Samenvatting opslaan'),
             ),
           ],
         ),

@@ -82,7 +82,7 @@ class _PomodoroTimerViewState extends State<PomodoroTimerView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Pomodoro Timer',
         ),
       ),

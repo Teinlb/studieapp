@@ -292,11 +292,16 @@ class _CreateWordListViewState extends State<CreateWordListView> {
                         DropdownButtonFormField<String>(
                           value: _selectedSubject,
                           items: [
-                            'Wiskunde',
-                            'Natuurkunde',
+                            'Engels',
+                            'Frans',
+                            'Duits',
+                            'Biologie',
+                            'Scheikunde',
                             'Geschiedenis',
-                            'Literatuur',
-                            'Overig'
+                            'Aardrijkskunde',
+                            'Natuurkunde',
+                            'Wiskunde',
+                            'Overig',
                           ]
                               .map((subject) => DropdownMenuItem(
                                     value: subject,
